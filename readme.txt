@@ -4,7 +4,7 @@ Donate link: http://peimic.com/about-peimic/donate/
 Tags: typo3, importer
 Requires at least: 3.0.0
 Tested up to: 3.2.1
-Stable tag: 0.2.0
+Stable tag: 1.0.1
 
 Import tt_news and tx_comments from TYPO3 into WordPress.
 
@@ -31,6 +31,20 @@ Yes. Any sponsoring would be greatly welcome. Please [donate](http://peimic.com/
 4. TYPO3 comment entries being imported
 
 == Changelog ==
+= 1.0.1 =
+* Update Changelog
+
+= 1.0.0 =
+* Update TYPO3 Importer settings screenshot
+* update CHANGELOG
+* Add force_private_posts(), Great for when you accidentially push imports live, but didn't mean to;
+* Remove excess options labels
+* fix options saving
+* Force post status save as option; Select draft, publish and future statuses from news import; Set input defaults;
+* Clarify plugin description; Add datetime to custom data; remove user_nicename as it prevents authors URLs from working;
+* remove testing case
+* prevent conflicting usernames
+* update Peimic.com plugin URL
 
 = 0.1.1 =
 * set featured image from content source or related images
