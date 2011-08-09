@@ -4,7 +4,7 @@ Donate link: http://peimic.com/about-peimic/donate/
 Tags: typo3, importer
 Requires at least: 3.0.0
 Tested up to: 3.2.1
-Stable tag: 0.2.0
+Stable tag: 1.0.0
 
 Import tt_news and tx_comments from TYPO3 into WordPress.
 
