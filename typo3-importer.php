@@ -554,7 +554,7 @@ class TYPO3_API_Import extends WP_Importer {
 		$post_content			= $post->post_content;
 
 		// create header
-		$new_content			= __( '<h3>Related Files</h3>' );
+		$new_content			= __( '<h3>Related Files</h3>' , 'typo3-importer');
 		// then create ul/li list of links
 		$new_content			.= '<ul>';
 
@@ -601,7 +601,7 @@ class TYPO3_API_Import extends WP_Importer {
 		$post_content			= $post->post_content;
 
 		// create header
-		$new_content			= __( '<h3>Related Links</h3>' );
+		$new_content			= __( '<h3>Related Links</h3>' , 'typo3-importer');
 		$new_content			.= '<ul>';
 
 		// then create ul/li list of links
