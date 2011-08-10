@@ -2,9 +2,9 @@
 # This file is distributed under the same license as the TYPO3 Importer package.
 msgid ""
 msgstr ""
-"Project-Id-Version: TYPO3 Importer 0.1.1\n"
+"Project-Id-Version: TYPO3 Importer 1.0.1\n"
 "Report-Msgid-Bugs-To: http://wordpress.org/tag/typo3-importer\n"
-"POT-Creation-Date: 2011-08-09 23:34:20+00:00\n"
+"POT-Creation-Date: 2011-08-10 00:05:44+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -12,354 +12,354 @@ msgstr ""
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 
-#. #-#-#-#-#  typo3-importer.pot (TYPO3 Importer 0.1.1)  #-#-#-#-#
+#. #-#-#-#-#  plugin.pot (TYPO3 Importer 1.0.1)  #-#-#-#-#
 #. Plugin Name of the plugin/theme
-#: typo3-importer.php:102 typo3-importer.php:1797
+#: typo3-importer.php:100 typo3-importer.php:1795
 msgid "TYPO3 Importer"
 msgstr ""
 
-#: typo3-importer.php:122
+#: typo3-importer.php:120
 msgid ""
 "It looks like you attempted to import your TYPO3 posts previously and got "
 "interrupted."
 msgstr ""
 
-#: typo3-importer.php:124
+#: typo3-importer.php:122
 msgid "Continue previous import"
 msgstr ""
 
-#: typo3-importer.php:126
+#: typo3-importer.php:124
 msgid "Cancel &amp; start a new import"
 msgstr ""
 
-#: typo3-importer.php:131
+#: typo3-importer.php:129
 msgid ""
 "Howdy! This importer allows you to connect directly to a TYPO3 website and "
 "download all of your tt_news and tx_comments records."
 msgstr ""
 
-#: typo3-importer.php:133
+#: typo3-importer.php:131
 msgid "TYPO3 Website Access"
 msgstr ""
 
-#: typo3-importer.php:136
+#: typo3-importer.php:134
 msgid "Website URL"
 msgstr ""
 
-#: typo3-importer.php:140
+#: typo3-importer.php:138
 msgid "Database Host"
 msgstr ""
 
-#: typo3-importer.php:144
+#: typo3-importer.php:142
 msgid "Database Name"
 msgstr ""
 
-#: typo3-importer.php:148
+#: typo3-importer.php:146
 msgid "Database Username"
 msgstr ""
 
-#: typo3-importer.php:152
+#: typo3-importer.php:150
 msgid "Database Password"
 msgstr ""
 
-#: typo3-importer.php:157
+#: typo3-importer.php:155
 msgid "Import Options"
 msgstr ""
 
-#: typo3-importer.php:160
+#: typo3-importer.php:158
 msgid "Protected Post Password"
 msgstr ""
 
-#: typo3-importer.php:164
+#: typo3-importer.php:162
 msgid "Set Post Status as...?"
 msgstr ""
 
-#: typo3-importer.php:176
+#: typo3-importer.php:174
 msgid "%s"
 msgstr ""
 
-#: typo3-importer.php:181
+#: typo3-importer.php:179
 msgid "Set Featured Image?"
 msgstr ""
 
-#: typo3-importer.php:188
+#: typo3-importer.php:186
 msgid "Approve Non-spam Comments?"
 msgstr ""
 
-#: typo3-importer.php:196
+#: typo3-importer.php:194
 msgid "Testing Options"
 msgstr ""
 
-#: typo3-importer.php:199
+#: typo3-importer.php:197
 msgid "Don't Import Comments"
 msgstr ""
 
-#: typo3-importer.php:206
+#: typo3-importer.php:204
 msgid "Don't Import Media"
 msgstr ""
 
-#: typo3-importer.php:215
+#: typo3-importer.php:213
 msgid "Import Limit (0 for all)"
 msgstr ""
 
-#: typo3-importer.php:220
+#: typo3-importer.php:218
 msgid "Oops..."
 msgstr ""
 
-#: typo3-importer.php:223
+#: typo3-importer.php:221
 msgid "Imported Posts to Private, NOW!"
 msgstr ""
 
-#: typo3-importer.php:228
+#: typo3-importer.php:226
 msgid "Delete Prior Imports"
 msgstr ""
 
-#: typo3-importer.php:229
+#: typo3-importer.php:227
 msgid ""
 "This will remove ALL post imports with the 't3:tt_news.uid' meta key. Post "
 "media and comments will also be deleted."
 msgstr ""
 
-#: typo3-importer.php:232
+#: typo3-importer.php:230
 msgid "Delete Imported Posts"
 msgstr ""
 
-#: typo3-importer.php:236
+#: typo3-importer.php:234
 msgid ""
 "This will remove ALL comments imports with the 't3:tx_comments' "
 "comment_agent key."
 msgstr ""
 
-#: typo3-importer.php:239
+#: typo3-importer.php:237
 msgid "Delete Imported Comments"
 msgstr ""
 
-#: typo3-importer.php:243
+#: typo3-importer.php:241
 msgid ""
 "This will remove ALL media without a related post. It's possible for non-"
 "imported media to be deleted."
 msgstr ""
 
-#: typo3-importer.php:246
+#: typo3-importer.php:244
 msgid "Delete Unattached Media"
 msgstr ""
 
-#: typo3-importer.php:251
+#: typo3-importer.php:249
 msgid "Check Access and Start Import"
 msgstr ""
 
-#: typo3-importer.php:253
+#: typo3-importer.php:251
 msgid "Connect to TYPO3 and Import"
 msgstr ""
 
-#: typo3-importer.php:255
+#: typo3-importer.php:253
 msgid ""
 "This can take a really long time if you have a lot of news in your TYPO3 "
 "system or a lot of comments. Ideally, you should only start this process if "
 "you can leave your computer alone while it finishes the import."
 msgstr ""
 
-#: typo3-importer.php:256
+#: typo3-importer.php:254
 msgid ""
 "<strong>NOTE:</strong> If the import process is interrupted for <em>any</em> "
 "reason, come back to this page and it will continue from where it stopped "
 "automatically."
 msgstr ""
 
-#: typo3-importer.php:258
+#: typo3-importer.php:256
 msgid ""
 "<strong>NOTE:</strong> You appear to have JavaScript disabled, so you will "
 "need to manually click through each step of this importer. If you enable "
 "JavaScript, it will step through automatically."
 msgstr ""
 
-#: typo3-importer.php:280
+#: typo3-importer.php:278
 msgid "Meta data for %s has been downloaded, continuing with import."
 msgstr ""
 
-#: typo3-importer.php:357
+#: typo3-importer.php:355
 msgid "Imported comment from <strong>%s</strong>"
 msgstr ""
 
-#: typo3-importer.php:360
+#: typo3-importer.php:358
 msgid "Comment from <strong>%s</strong> already exists."
 msgstr ""
 
-#: typo3-importer.php:417
+#: typo3-importer.php:415
 msgid "%s added as an author."
 msgstr ""
 
-#: typo3-importer.php:467
+#: typo3-importer.php:465
 msgid "Post <strong>%s</strong> already exists."
 msgstr ""
 
-#: typo3-importer.php:469
+#: typo3-importer.php:467
 msgid "Imported post <strong>%s</strong>"
 msgstr ""
 
-#: typo3-importer.php:480
+#: typo3-importer.php:478
 msgid "Couldn&#8217;t get post ID (creating post failed!)"
 msgstr ""
 
-#: typo3-importer.php:482
+#: typo3-importer.php:480
 msgid "Failed to create post."
 msgstr ""
 
-#: typo3-importer.php:559
+#: typo3-importer.php:557
 msgid "<h3>Related Files</h3>"
 msgstr ""
 
-#: typo3-importer.php:606
+#: typo3-importer.php:604
 msgid "<h3>Related Links</h3>"
 msgstr ""
 
-#: typo3-importer.php:1145
+#: typo3-importer.php:1143
 msgid "Comments Deleted"
 msgstr ""
 
-#: typo3-importer.php:1146
+#: typo3-importer.php:1144
 msgid "Successfully removed %s comments."
 msgstr ""
 
-#: typo3-importer.php:1178
+#: typo3-importer.php:1176
 msgid "Prior Imports Forced to Private Status"
 msgstr ""
 
-#: typo3-importer.php:1179
+#: typo3-importer.php:1177
 msgid "Successfully updated %s TYPO3 news imports to 'Private'."
 msgstr ""
 
-#: typo3-importer.php:1206
+#: typo3-importer.php:1204
 msgid "Prior Imports Deleted"
 msgstr ""
 
-#: typo3-importer.php:1207
+#: typo3-importer.php:1205
 msgid ""
 "Successfully removed %s TYPO3 news and their related media and comments."
 msgstr ""
 
-#: typo3-importer.php:1226
+#: typo3-importer.php:1224
 msgid "Attachments Deleted"
 msgstr ""
 
-#: typo3-importer.php:1227
+#: typo3-importer.php:1225
 msgid "Successfully removed %s no-post attachments."
 msgstr ""
 
-#: typo3-importer.php:1243
+#: typo3-importer.php:1241
 msgid "Please provide your TYPO3 website information."
 msgstr ""
 
-#: typo3-importer.php:1244 typo3-importer.php:1254
+#: typo3-importer.php:1242 typo3-importer.php:1252
 msgid "Start again"
 msgstr ""
 
-#: typo3-importer.php:1253
+#: typo3-importer.php:1251
 msgid "TYPO3 website not found. Check your TYPO3 URL and try again."
 msgstr ""
 
-#: typo3-importer.php:1416
+#: typo3-importer.php:1414
 msgid "Importing News"
 msgstr ""
 
-#: typo3-importer.php:1417
+#: typo3-importer.php:1415
 msgid "We&#8217;re downloading and importing your TYPO3 tt_news."
 msgstr ""
 
-#: typo3-importer.php:1434
+#: typo3-importer.php:1432
 msgid ""
 "Uh oh &ndash; TYPO3 has disconnected us because we made too many requests to "
 "their servers too quickly."
 msgstr ""
 
-#: typo3-importer.php:1435
+#: typo3-importer.php:1433
 msgid ""
 "We&#8217;ve saved where you were up to though, so if you come back to this "
 "importer in about 30 minutes, you should be able to continue from where you "
 "were."
 msgstr ""
 
-#: typo3-importer.php:1437 typo3-importer.php:1595
+#: typo3-importer.php:1435 typo3-importer.php:1593
 msgid "Try Again"
 msgstr ""
 
-#: typo3-importer.php:1452 typo3-importer.php:1516
+#: typo3-importer.php:1450 typo3-importer.php:1514
 msgid "Imported %s batch %d of %d"
 msgstr ""
 
-#: typo3-importer.php:1457 typo3-importer.php:1521
+#: typo3-importer.php:1455 typo3-importer.php:1519
 msgid "Import the next batch"
 msgstr ""
 
-#: typo3-importer.php:1462
+#: typo3-importer.php:1460
 msgid "Finish Import"
 msgstr ""
 
-#: typo3-importer.php:1465
+#: typo3-importer.php:1463
 msgid ""
 "Your posts have all been imported, but wait &#8211; there&#8217;s more! Now "
 "we need to download &amp; import your comments."
 msgstr ""
 
-#: typo3-importer.php:1466
+#: typo3-importer.php:1464
 msgid "Download my comments &raquo;"
 msgstr ""
 
-#: typo3-importer.php:1488
+#: typo3-importer.php:1486
 msgid "Importing Comments"
 msgstr ""
 
-#: typo3-importer.php:1489
+#: typo3-importer.php:1487
 msgid ""
 "Now we will download your comments so we can import them (this could take a "
 "<strong>long</strong> time if you have lots of comments)."
 msgstr ""
 
-#: typo3-importer.php:1526
+#: typo3-importer.php:1524
 msgid ""
 "Your comments have all been imported now, but we still need to rebuild your "
 "conversation threads."
 msgstr ""
 
-#: typo3-importer.php:1527
+#: typo3-importer.php:1525
 msgid "Rebuild my comment threads &raquo;"
 msgstr ""
 
-#: typo3-importer.php:1544
+#: typo3-importer.php:1542
 msgid "Threading Comments"
 msgstr ""
 
-#: typo3-importer.php:1545
+#: typo3-importer.php:1543
 msgid ""
 "We are now re-building the threading of your comments (this can also take a "
 "while if you have lots of comments)."
 msgstr ""
 
-#: typo3-importer.php:1575
+#: typo3-importer.php:1573
 msgid "Successfully re-threaded %s comments."
 msgstr ""
 
-#: typo3-importer.php:1587
+#: typo3-importer.php:1585
 msgid "All done. <a href=\"%s\">Have fun!</a>"
 msgstr ""
 
-#: typo3-importer.php:1620 typo3-importer.php:1648
+#: typo3-importer.php:1618 typo3-importer.php:1646
 msgid "Continuing in %d"
 msgstr ""
 
-#: typo3-importer.php:1625
+#: typo3-importer.php:1623
 msgid "Continuing"
 msgstr ""
 
-#: typo3-importer.php:1654
+#: typo3-importer.php:1652
 msgid "Processing next batch."
 msgstr ""
 
-#: typo3-importer.php:1705
+#: typo3-importer.php:1703
 msgid "Import"
 msgstr ""
 
-#: typo3-importer.php:1797
+#: typo3-importer.php:1795
 msgid "Import tt_news and tx_comments from TYPO3."
 msgstr ""
 
