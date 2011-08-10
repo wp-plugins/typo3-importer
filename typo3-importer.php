@@ -3,7 +3,7 @@
 Plugin Name: TYPO3 Importer
 Plugin URI: http://peimic.com/t/typo3+importer
 Description: Import tt_news and tx_comments from TYPO3 into WordPress.
-Version: 1.0.1
+Version: 1.0.2
 Author: Michael Cannon
 Author URI: http://peimic.com/contact-peimic/
 License: GPL2
