@@ -25,11 +25,9 @@ License: GPL2
 */
 
 // TYPO3 includes for helping parse typolink tags
-include('lib/class.t3lib_div.php');
-include('lib/class.t3lib_parsehtml.php');
-include('lib/class.t3lib_softrefproc.php');
-
-add_action( 'wp_ajax_typo3_importer', 'typo3_import_ajax_handler' );
+include_once( 'lib/class.t3lib_div.php' );
+include_once( 'lib/class.t3lib_parsehtml.php' );
+include_once( 'lib/class.t3lib_softrefproc.php' );
 
 function typo3_import_ajax_handler() {
 	global $typo3_import;
@@ -46,18 +44,24 @@ function typo3_import_ajax_handler() {
 	die;
 }
 
-if ( !defined('WP_LOAD_IMPORTERS') && !defined( 'DOING_AJAX' ) )
+add_action( 'wp_ajax_typo3_importer', 'typo3_import_ajax_handler' );
+
+// TODO figure out why this is here
+if ( false && ! defined( 'WP_LOAD_IMPORTERS' ) && ! defined( 'DOING_AJAX' ) )
 	return;
 
 // Load Importer API
-require_once ABSPATH . 'wp-admin/includes/import.php';
+require_once( ABSPATH . 'wp-admin/includes/import.php' );
 
-if ( !class_exists( 'WP_Importer' ) ) {
+if ( ! class_exists( 'WP_Importer' ) ) {
 	$class_wp_importer = ABSPATH . 'wp-admin/includes/class-wp-importer.php';
 	if ( file_exists( $class_wp_importer ) )
 		require_once $class_wp_importer;
 }
 
+if ( ! class_exists( 'WP_Importer' ) ) {
+	die( __( 'WP_Importer not found', 'typo3-importer' ) );
+}
 
 /**
  * TYPO3 Importer
@@ -65,9 +69,7 @@ if ( !class_exists( 'WP_Importer' ) ) {
  * @package typo3-importer
  * @subpackage Importer
  */
-if ( class_exists( 'WP_Importer' ) ) {
-class TYPO3_API_Import extends WP_Importer {
-
+class TYPO3_Importer extends WP_Importer {
 	var $wpdb					= null;
 	var $typo3_url				= null;
 	var $t3db					= null;
@@ -94,6 +96,14 @@ class TYPO3_API_Import extends WP_Importer {
 	var $import_types			= array( 'news', 'comments' );
 	var $post_status_options	= array( 'draft', 'publish', 'pending', 'future', 'private' );
 
+	function TYPO3_Importer() {
+		load_plugin_textdomain( 'typo3-importer', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+
+		 add_filter( 'plugin_action_links', array( &$this, 'add_plugin_action_links' ), 10, 2 );
+		
+		register_importer( 'typo3-importer', __( 'TYPO3 Importer', 'typo3-importer'), __( 'Import tt_news and tx_comments from TYPO3.', 'typo3-importer'), array( $this, 'dispatch' ) );
+	}
+
 	function header() {
 		echo '<div class="wrap">';
 		screen_icon();
@@ -107,7 +117,7 @@ class TYPO3_API_Import extends WP_Importer {
 	function greet() {
 		?>
 		<div class="narrow">
-		<form action="admin.php?import=typo3" method="post">
+		<form action="admin.php?import=typo3-importer" method="post">
 		<?php wp_nonce_field( 'typo3-import' ) ?>
 		<?php if ( get_option( 't3db_host' )
 			&& get_option( 'typo3_url' )
@@ -121,7 +131,7 @@ class TYPO3_API_Import extends WP_Importer {
 			<p class="submit">
 				<input type="submit" class="button" value="<?php esc_attr_e( 'Continue previous import', 'typo3-importer') ?>" />
 			</p>
-			<p class="submitbox"><a href="<?php echo esc_url($_SERVER['PHP_SELF'] . '?import=typo3&amp;step=-1&amp;_wpnonce=' . wp_create_nonce( 'typo3-import' ) . '&amp;_wp_http_referer=' . esc_attr( $_SERVER['REQUEST_URI'] )) ?>" class="deletion submitdelete"><?php _e( 'Cancel &amp; start a new import', 'typo3-importer') ?></a></p>
+			<p class="submitbox"><a href="<?php echo esc_url($_SERVER['PHP_SELF'] . '?import=typo3-importer&amp;step=-1&amp;_wpnonce=' . wp_create_nonce( 'typo3-import' ) . '&amp;_wp_http_referer=' . esc_attr( $_SERVER['REQUEST_URI'] )) ?>" class="deletion submitdelete"><?php _e( 'Cancel &amp; start a new import', 'typo3-importer') ?></a></p>
 			<p>
 		<?php else : ?>
 			<input type="hidden" name="step" value="1" />
@@ -1239,7 +1249,7 @@ class TYPO3_API_Import extends WP_Importer {
 		) {
 			?>
 			<p><?php _e( 'Please provide your TYPO3 website information.', 'typo3-importer') ?></p>
-			<p><a href="<?php echo esc_url($_SERVER['PHP_SELF'] . '?import=typo3&amp;step=0&amp;_wpnonce=' . wp_create_nonce( 'typo3-import' ) . '&amp;_wp_http_referer=' . esc_attr( str_replace( '&step=-1', '', $_SERVER['REQUEST_URI'] ) ) ) ?>"><?php _e( 'Start again', 'typo3-importer') ?></a></p>
+			<p><a href="<?php echo esc_url($_SERVER['PHP_SELF'] . '?import=typo3-importer&amp;step=0&amp;_wpnonce=' . wp_create_nonce( 'typo3-import' ) . '&amp;_wp_http_referer=' . esc_attr( str_replace( '&step=-1', '', $_SERVER['REQUEST_URI'] ) ) ) ?>"><?php _e( 'Start again', 'typo3-importer') ?></a></p>
 			<?php
 			return false;
 		}
@@ -1249,7 +1259,7 @@ class TYPO3_API_Import extends WP_Importer {
 		if ( ! $verified ) {
 			?>
 			<p><?php _e( 'TYPO3 website not found. Check your TYPO3 URL and try again.', 'typo3-importer') ?></p>
-			<p><a href="<?php echo esc_url($_SERVER['PHP_SELF'] . '?import=typo3&amp;step=-1&amp;_wpnonce=' . wp_create_nonce( 'typo3-import' ) . '&amp;_wp_http_referer=' . esc_attr( str_replace( '&step=1', '', $_SERVER['REQUEST_URI'] ) ) ) ?>"><?php _e( 'Start again', 'typo3-importer') ?></a></p>
+			<p><a href="<?php echo esc_url($_SERVER['PHP_SELF'] . '?import=typo3-importer&amp;step=-1&amp;_wpnonce=' . wp_create_nonce( 'typo3-import' ) . '&amp;_wp_http_referer=' . esc_attr( str_replace( '&step=1', '', $_SERVER['REQUEST_URI'] ) ) ) ?>"><?php _e( 'Start again', 'typo3-importer') ?></a></p>
 			<?php
 			return $verified;
 		} else {
@@ -1449,7 +1459,7 @@ class TYPO3_API_Import extends WP_Importer {
 			$batches			= ( $total > $limit ) ? ceil( $total / $limit ) : 1;
 			echo '<p><strong>' . sprintf( __( 'Imported %s batch %d of %d', 'typo3-importer'), $type, $batch, $batches ) . '</strong></p>';
 		?>
-			<form action="admin.php?import=typo3" method="post" id="t3api-auto-repost">
+			<form action="admin.php?import=typo3-importer" method="post" id="t3api-auto-repost">
 			<?php wp_nonce_field( 'typo3-import' ) ?>
 			<input type="hidden" name="step" id="step" value="<?php echo get_option( 't3api_step' ); ?>" />
 			<p><input type="submit" class="button" value="<?php esc_attr_e( 'Import the next batch', 'typo3-importer') ?>" /> <span id="auto-message"></span></p>
@@ -1513,7 +1523,7 @@ class TYPO3_API_Import extends WP_Importer {
 			$batches			= ( $total > $limit ) ? ceil( $total / $limit ) : 1;
 			echo '<p><strong>' . sprintf( __( 'Imported %s batch %d of %d', 'typo3-importer'), $type, $batch, $batches ) . '</strong></p>';
 		?>
-			<form action="admin.php?import=typo3" method="post" id="t3api-auto-repost">
+			<form action="admin.php?import=typo3-importer" method="post" id="t3api-auto-repost">
 			<?php wp_nonce_field( 'typo3-import' ) ?>
 			<input type="hidden" name="step" id="step" value="<?php echo get_option( 't3api_step' ); ?>" />
 			<p><input type="submit" class="button" value="<?php esc_attr_e( 'Import the next batch', 'typo3-importer') ?>" /> <span id="auto-message"></span></p>
@@ -1595,7 +1605,7 @@ class TYPO3_API_Import extends WP_Importer {
 
 	// Returns the HTML for a link to the next page
 	function next_step( $next_step, $label, $id = 't3api-next-form' ) {
-		$str  = '<form action="admin.php?import=typo3" method="post" id="' . $id . '">';
+		$str  = '<form action="admin.php?import=typo3-importer" method="post" id="' . $id . '">';
 		$str .= wp_nonce_field( 'typo3-import', '_wpnonce', true, false );
 		$str .= wp_referer_field( false );
 		$str .= '<input type="hidden" name="step" id="step" value="' . esc_attr($next_step) . '" />';
@@ -1699,8 +1709,8 @@ class TYPO3_API_Import extends WP_Importer {
 		$this->t3db				= new wpdb($this->t3db_username, $this->t3db_password, $this->t3db_name, $this->t3db_host);
 	}
 
-	function filter_plugin_actions($links, $file) {
-	   $importer_link = '<a href="admin.php?import=typo3">' . __('Import', 'typo3-importer') . '</a>';
+	function add_plugin_action_links($links, $file) {
+	   $importer_link = '<a href="admin.php?import=typo3-importer">' . __('Import', 'typo3-importer') . '</a>';
 	   array_unshift( $links, $importer_link ); // before other links
 
 	   return $links;
@@ -1790,17 +1800,10 @@ class TYPO3_API_Import extends WP_Importer {
 	}
 }
 
-$typo3_import = new TYPO3_API_Import();
-
-register_importer( 'typo3', __( 'TYPO3 Importer', 'typo3-importer'), __( 'Import tt_news and tx_comments from TYPO3.', 'typo3-importer'), array( $typo3_import, 'dispatch' ) );
-
-// TODO fix
-// add_filter( 'plugin_action_links_' . plugin_basename(__FILE__), array(&$typo3_import, 'filter_plugin_actions'), 10, 2 );
-
-} // class_exists( 'WP_Importer' )
-
-function typo3_importer_init() {
-    load_plugin_textdomain( 'typo3-importer', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+// Start up this plugin
+function TYPO3_Importer() {
+	global $TYPO3_Importer;
+	$TYPO3_Importer				= new TYPO3_Importer();
 }
 
-add_action( 'init', 'typo3_importer_init' );
+add_action( 'init', 'TYPO3_Importer' );
