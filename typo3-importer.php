@@ -30,7 +30,7 @@ include_once( 'lib/class.t3lib_parsehtml.php' );
 include_once( 'lib/class.t3lib_softrefproc.php' );
 
 function typo3_import_ajax_handler() {
-	global $typo3_import;
+	global $TYPO3_Importer;
 
 	check_ajax_referer( 'typo3-import' );
 	if ( !current_user_can( 'publish_posts' ) )
@@ -38,7 +38,7 @@ function typo3_import_ajax_handler() {
 	if ( empty( $_POST['step'] ) )
 		die( __LINE__ );
 	define('WP_IMPORTING', true);
-	$result = $typo3_import->{ 'step' . ( (int) $_POST['step'] ) }();
+	$result						= $TYPO3_Importer->{ 'step' . ( (int) $_POST['step'] ) }();
 	if ( is_wp_error( $result ) )
 		echo $result->get_error_message();
 	die;
@@ -1710,10 +1710,13 @@ class TYPO3_Importer extends WP_Importer {
 	}
 
 	function add_plugin_action_links($links, $file) {
-	   $importer_link = '<a href="admin.php?import=typo3-importer">' . __('Import', 'typo3-importer') . '</a>';
-	   array_unshift( $links, $importer_link ); // before other links
+		if ( $file == plugin_basename( __FILE__ ) ) {
+			$importer_link = '<a href="admin.php?import=typo3-importer">' . __('Import', 'typo3-importer') . '</a>';
+			// make the 'Import' link appear first
+			array_unshift( $links, $importer_link );
+		}
 
-	   return $links;
+		return $links;
 	}
 
 	// remove TYPO3's broken link span code
