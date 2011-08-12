@@ -1,0 +1,130 @@
+2011-08-12 03:32  comprock
+
+	* screenshot-1.png,
+	  screenshot-2.png,
+	  screenshot-3.png,
+	  screenshot-4.png:
+	  Smush.it
+	  screenshots
+
+2011-08-11 03:45  comprock
+
+	* typo3-importer.php:
+	  Prevent
+	  Import
+	  link
+	  on
+	  other
+	  plugins;
+	  Fix
+	  global
+	  variable
+	  name
+
+2011-08-11 03:39  comprock
+
+	* typo3-importer.php:
+	  Rename
+	  class
+	  to
+	  TYPO3_Importer;
+	  Minor
+	  whitespace
+	  cleanup;
+	  Enable
+	  Import
+	  link
+	  from
+	  Plugins
+	  screen;
+	  Move
+	  init
+	  functions
+	  within
+	  class;
+	  Correct
+	  import
+	  URL
+
+2011-08-10 15:15  comprock
+
+	* readme.txt,
+	  typo3-importer.php:
+	  update
+	  plugin
+	  URL
+
+2011-08-10 15:14  comprock
+
+	* typo3-importer.php:
+	  Correct
+	  plugin
+	  URL
+
+2011-08-10 14:56  comprock
+
+	* readme.txt,
+	  typo3-importer.php:
+	  Update
+	  description
+
+2011-08-10 00:08  comprock
+
+	* typo3-importer.php:
+	  Add
+	  domain
+	  translation
+
+2011-08-10 00:07  comprock
+
+	* languages/typo3-importer.pot:
+	  Update
+	  pot
+
+2011-08-09 23:43  comprock
+
+	* readme.txt,
+	  typo3-importer.php:
+	  update
+	  changelog
+	  in
+	  readme
+
+2011-08-09 23:36  comprock
+
+	* languages/typo3-importer.pot,
+	  readme.txt,
+	  screenshot-2.png,
+	  typo3-importer.php:
+	  prep
+	  for
+	  1.0.0
+	  release
+
+2011-08-09 23:25  comprock
+
+	* CHANGELOG,
+	  languages,
+	  languages/typo3-importer.pot,
+	  lib,
+	  lib/class.t3lib_div.php,
+	  lib/class.t3lib_parsehtml.php,
+	  lib/class.t3lib_softrefproc.php,
+	  readme.txt,
+	  screenshot-1.png,
+	  screenshot-2.png,
+	  screenshot-3.png,
+	  screenshot-4.png,
+	  typo3-importer.php:
+	  Iniital
+	  v0.2.0
+	  import
+
+2011-08-09 20:13  plugin-master
+
+	* .:
+	  adding
+	  typo3-importer
+	  by
+	  comprock
+
