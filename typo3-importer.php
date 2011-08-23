@@ -336,8 +336,11 @@ class TYPO3_Importer extends WP_Importer {
 		else
 			$approved			= 0;
 
-		if ( wp_blacklist_check($comment['comment_author'], $comment['comment_author_email'], $comment['comment_author_url'], $comment['comment_content'], $comment['comment_author_IP'], $comment['comment_agent']) )
+		if ( wp_blacklist_check($comment['comment_author'], $comment['comment_author_email'], $comment['comment_author_url'], $comment['comment_content'], $comment['comment_author_IP'], $comment['comment_agent']) ) {
 			$approved			= 'spam';
+		} elseif ( $this->askimet_spam_checker( $comment ) ) {
+			$approved			= 'spam';
+		}
 
 		// auto approve imported comments
 		if ( $this->approve_comments && $approved !== 'spam' ) {
@@ -1800,6 +1803,58 @@ class TYPO3_Importer extends WP_Importer {
 		}
 
 		return implode( '', $pre_tags );
+	}
+
+
+	/**
+	 * Askimet spam checker
+	 *
+	 * @ref http://www.binarymoon.co.uk/2010/03/akismet-plugin-theme-stop-spam-dead/
+	 * @param	array	content	$content['comment_author']
+	 *							$content['comment_author_email']
+	 *							$content['comment_author_url']
+	 *							$content['comment_content']
+	 * @return	boolean	true	is spam	false	is not spam
+	 */
+	function askimet_spam_checker( $content ) {
+		// innocent until proven guilty
+		$is_spam				= false;
+		$content				= (array) $content;
+
+		if ( function_exists( 'akismet_init' ) ) {
+			$wpcom_api_key		= get_option( 'wordpress_api_key' );
+
+			if ( ! empty( $wpcom_api_key ) ) {
+				global $akismet_api_host, $akismet_api_port;
+
+				// set remaining required values for akismet api
+				$content['user_ip']		= preg_replace( '/[^0-9., ]/', '', $_SERVER['REMOTE_ADDR'] );
+				$content['user_agent']	= $_SERVER['HTTP_USER_AGENT'];
+				$content['referrer']	= $_SERVER['HTTP_REFERER'];
+				$content['blog']		= get_option('home');
+
+				if ( empty( $content['referrer'] ) ) {
+					$content['referrer']	= get_permalink();
+				}
+
+				$query_str		= '';
+
+				foreach( $content as $key => $data ) {
+					if ( ! empty( $data ) ) {
+						$query_str	.= $key . '=' . urlencode(	stripslashes( $data ) ) . '&';
+					}
+				}
+
+				$response		= akismet_http_post( $query_str, $akismet_api_host, '/1.1/comment-check', $akismet_api_port );
+
+				if ( 'true' == $response[1] ) {
+					update_option( 'akismet_spam_count', get_option('akismet_spam_count') + 1 );
+					$is_spam		= true;
+				}
+			}
+		}
+
+		return $is_spam;
 	}
 }
 
