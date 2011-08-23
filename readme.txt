@@ -41,6 +41,10 @@ Yes. Any sponsoring would be greatly welcome. Please [donate](http://peimic.com/
 4. TYPO3 comment entries being imported
 
 == Changelog ==
+= trunk =
+* Add askimet_spam_checker to comment importing
+-
+
 = 1.0.2 =
 * Update description
 
