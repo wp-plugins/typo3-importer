@@ -13,6 +13,8 @@ Importer to bring your TYPO3 news and their related media and comments into Word
 
 Requires remote web and database access to the source TYPO3 instance. Images, files and comments related to TYPO3 tt_news entries will be pulled into WordPress as new posts.
 
+Comments will be automatically tested for spam via Askimet if you have it configured.
+
 Inline and related images will be added to the Media Library. The first image found will be set as the Featured Image for the post. Inline images will have their source URLs updated. Related images will be converted to a [gallery] and inserted into the post about 2 paragraphs in.
 
 Files will be appended to post content as 'Related Files'.
@@ -42,6 +44,7 @@ Yes. Any sponsoring would be greatly welcome. Please [donate](http://peimic.com/
 
 == Changelog ==
 = trunk =
+* Remove TYPO3 tx_comments approved requirement
 * Add askimet_spam_checker to comment importing
 -
 
