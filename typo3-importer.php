@@ -186,6 +186,10 @@ class TYPO3_Importer extends WP_Importer {
 					</td>
 				</tr>
 				<tr>
+					<th scope="row"><label for="insert_more_link"><?php _e( 'Insert More Link? (0 for no or insert at X paragraphs)', 'typo3-importer') ?></label></th>
+					<td><input type="text" name="insert_more_link" id="insert_more_link" class="regular-text" value="<?php echo get_option( 't3api_insert_more_link', 0 ); ?>" /></td>
+				</tr>
+				<tr>
 					<th scope="row"><label for="set_featured_image"><?php _e( 'Set Featured Image?', 'typo3-importer') ?></label></th>
 					<?php
 						$checked_set_featured_image	= get_option( 't3api_set_featured_image', 1 ) ? 'checked="checked"' : '';
@@ -193,11 +197,8 @@ class TYPO3_Importer extends WP_Importer {
 					<td><input type="checkbox" name="set_featured_image" value="1" id="set_featured_image" class="regular-text" <?php echo $checked_set_featured_image; ?> /></td>
 				</tr>
 				<tr>
-					<th scope="row"><label for="append_gallery"><?php _e( 'Append Gallery Than Insert?', 'typo3-importer') ?></label></th>
-					<?php
-						$checked_append_gallery	= get_option( 't3api_append_gallery', 1 ) ? 'checked="checked"' : '';
-					?>
-					<td><input type="checkbox" name="append_gallery" value="1" id="append_gallery" class="regular-text" <?php echo $checked_append_gallery; ?> /></td>
+					<th scope="row"><label for="insert_gallery_shortcut"><?php _e( 'Insert Gallery Shortcode? (0 for no, -1 for append or insert at X paragraphs)', 'typo3-importer') ?></label></th>
+					<td><input type="text" name="insert_gallery_shortcut" id="insert_gallery_shortcut" class="regular-text" value="<?php echo get_option( 't3api_insert_gallery_shortcut', 0 ); ?>" /></td>
 				</tr>
 				<tr>
 					<th scope="row"><label for="approve_comments"><?php _e( 'Approve Non-spam Comments?', 'typo3-importer') ?></label></th>
@@ -784,22 +785,31 @@ class TYPO3_Importer extends WP_Importer {
 		// insert [gallery] into content after the second paragraph
 		// TODO prevent inserting gallery into pre/code sections
 		$post_content_array		= explode( $this->newline_wp, $post_content );
-		$post_content_arr_size	= ( $this->append_gallery ) ? 0 : sizeof( $post_content_array );
-		$new_post_content		= ( $this->append_gallery ) ? $post_content : '';
+		$post_content_arr_size	= sizeof( $post_content_array );
+		$new_post_content		= '';
 		$gallery_code			= '[gallery]';
 		$gallery_inserted		= false;
+		$morelink_code			= '<!--more-->';
 
 		for ( $i = 0; $i < $post_content_arr_size; $i++ ) {
-			if ( 2 != $i ) {
+			if ( $this->insert_gallery_shortcut != $i 
+				&& $this->insert_more_link != $i ) {
 				$new_post_content	.= $post_content_array[$i] . "{$this->newline_wp}";
 			} else {
-				$new_post_content	.= "{$gallery_code}{$this->newline_wp}";
+				if ( $this->insert_more_link == $i ) {
+					$new_post_content	.= "{$morelink_code}{$this->newline_wp}";
+				}
+
+				if ( $this->insert_gallery_shortcut == $i ) {
+					$new_post_content	.= "{$gallery_code}{$this->newline_wp}";
+					$gallery_inserted	= true;
+				}
+
 				$new_post_content	.= $post_content_array[$i] . "{$this->newline_wp}";
-				$gallery_inserted	= true;
 			}
 		}
 
-		if ( ! $gallery_inserted ) {
+		if ( ! $gallery_inserted && 0 != $this->insert_gallery_shortcut ) {
 			$new_post_content	.= $gallery_code;
 		}
 		
@@ -1345,6 +1355,15 @@ class TYPO3_Importer extends WP_Importer {
 		}
 		update_option( 't3api_force_post_status', $this->force_post_status );
 
+		if ( isset( $_POST['insert_more_link'] ) ) {
+			$this->insert_more_link	= $_POST['insert_more_link'];
+		} elseif ( $_POST['login'] ) {
+			$this->insert_more_link	= 3;
+		} else {
+			$this->insert_more_link	= get_option( 't3api_insert_more_link', 0 );
+		}
+		update_option( 't3api_insert_more_link', $this->insert_more_link );
+
 		if ( isset( $_POST['set_featured_image'] ) ) {
 			$this->set_featured_image	= $_POST['set_featured_image'];
 		} elseif ( $_POST['login'] ) {
@@ -1354,14 +1373,14 @@ class TYPO3_Importer extends WP_Importer {
 		}
 		update_option( 't3api_set_featured_image', $this->set_featured_image );
 
-		if ( isset( $_POST['append_gallery'] ) ) {
-			$this->append_gallery	= $_POST['append_gallery'];
+		if ( isset( $_POST['insert_gallery_shortcut'] ) ) {
+			$this->insert_gallery_shortcut	= $_POST['insert_gallery_shortcut'];
 		} elseif ( $_POST['login'] ) {
-			$this->append_gallery	= 0;
+			$this->insert_gallery_shortcut	= 0;
 		} else {
-			$this->append_gallery	= get_option( 't3api_append_gallery', 0 );
+			$this->insert_gallery_shortcut	= get_option( 't3api_insert_gallery_shortcut', -1 );
 		}
-		update_option( 't3api_append_gallery', $this->append_gallery );
+		update_option( 't3api_insert_gallery_shortcut', $this->insert_gallery_shortcut );
 
 		if ( isset( $_POST['approve_comments'] ) ) {
 			$this->approve_comments	= $_POST['approve_comments'];
