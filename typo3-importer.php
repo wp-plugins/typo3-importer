@@ -5,10 +5,10 @@ Plugin URI: http://wordpress.org/extend/plugins/typo3-importer/
 Description: Import tt_news and tx_comments from TYPO3 into WordPress.
 Version: 1.0.3
 Author: Michael Cannon
-Author URI: http://peimic.com/contact-peimic/
+Author URI: http://typo3vagabond.com/contact-typo3vagabond/
 License: GPL2
 */
-/*  Copyright 2011  Michael Cannon  (email : michael@peimic.com)
+/*  Copyright 2011  Michael Cannon  (email : michael@typo3vagabond.com)
  
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License, version 2, as 
@@ -197,7 +197,7 @@ class TYPO3_Importer extends WP_Importer {
 					<td><input type="checkbox" name="set_featured_image" value="1" id="set_featured_image" class="regular-text" <?php echo $checked_set_featured_image; ?> /></td>
 				</tr>
 				<tr>
-					<th scope="row"><label for="insert_gallery_shortcut"><?php _e( 'Insert Gallery Shortcode? (0 for no, -1 for append or insert at X paragraphs)', 'typo3-importer') ?></label></th>
+					<th scope="row"><label for="insert_gallery_shortcut"><?php _e( 'Insert Gallery Shortcode? (0 for no, -1 for append, or insert at X paragraphs)', 'typo3-importer') ?></label></th>
 					<td><input type="text" name="insert_gallery_shortcut" id="insert_gallery_shortcut" class="regular-text" value="<?php echo get_option( 't3api_insert_gallery_shortcut', 0 ); ?>" /></td>
 				</tr>
 				<tr>
@@ -274,7 +274,7 @@ class TYPO3_Importer extends WP_Importer {
 				<p><?php _e( '<strong>NOTE:</strong> You appear to have JavaScript disabled, so you will need to manually click through each step of this importer. If you enable JavaScript, it will step through automatically.', 'typo3-importer') ?></p>
 			</noscript>
 			<hr />
-			<p>TYPO3 Importer by <a href="mailto:michael@peimic.com">Michael Cannon</a> of <a href="http://peimic.com">Peimic.com</a>.</p>
+			<p>TYPO3 Importer by <a href="mailto:michael@typo3vagabond.com">Michael Cannon</a> of <a href="http://typo3vagabond.com">TYPO3Vagabond.com</a>.</p>
 		<?php endif; ?>
 		</form>
 		</div>
@@ -791,16 +791,18 @@ class TYPO3_Importer extends WP_Importer {
 		$gallery_inserted		= false;
 		$morelink_code			= '<!--more-->';
 
+		var_dump($this->insert_more_link); echo '<br />'; echo '' . __LINE__ . ':' . basename( __FILE__ )  . '<br />';	
+		var_dump($this->insert_gallery_shortcut); echo '<br />'; echo '' . __LINE__ . ':' . basename( __FILE__ )  . '<br />';	
 		for ( $i = 0; $i < $post_content_arr_size; $i++ ) {
 			if ( $this->insert_gallery_shortcut != $i 
 				&& $this->insert_more_link != $i ) {
 				$new_post_content	.= $post_content_array[$i] . "{$this->newline_wp}";
 			} else {
-				if ( $this->insert_more_link == $i ) {
+				if ( $this->insert_more_link != 0 && $this->insert_more_link == $i ) {
 					$new_post_content	.= "{$morelink_code}{$this->newline_wp}";
 				}
 
-				if ( $this->insert_gallery_shortcut == $i ) {
+				if ( $this->insert_gallery_shortcut != 0 && $this->insert_gallery_shortcut == $i ) {
 					$new_post_content	.= "{$gallery_code}{$this->newline_wp}";
 					$gallery_inserted	= true;
 				}

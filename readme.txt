@@ -1,6 +1,6 @@
 === TYPO3 Importer ===
 Contributors: comprock
-Donate link: http://peimic.com/about-peimic/donate/
+Donate link: http://typo3vagabond.com/about-typo3-vagabond/donate/
 Tags: typo3, importer
 Requires at least: 3.0.0
 Tested up to: 3.2.1
@@ -34,7 +34,7 @@ TYPO3 Importer was modeled after the livejournal-importer plugin.
 
 == Frequently Asked Questions ==
 = Can I sponsor importing TYPO3 pages? =
-Yes. Any sponsoring would be greatly welcome. Please [donate](http://peimic.com/about-peimic/donate/ "Help sponsor TYPO3 Importer") and let me know what's wanted
+Yes. Any sponsoring would be greatly welcome. Please [donate](http://typo3vagabond.com/about-typo3-vagabond/donate/ "Help sponsor TYPO3 Importer") and let me know what's wanted
 
 == Screenshots ==
 1. Where to find TYPO3 Importer in Tools
