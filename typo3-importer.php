@@ -193,6 +193,13 @@ class TYPO3_Importer extends WP_Importer {
 					<td><input type="checkbox" name="set_featured_image" value="1" id="set_featured_image" class="regular-text" <?php echo $checked_set_featured_image; ?> /></td>
 				</tr>
 				<tr>
+					<th scope="row"><label for="append_gallery"><?php _e( 'Append Gallery Than Insert?', 'typo3-importer') ?></label></th>
+					<?php
+						$checked_append_gallery	= get_option( 't3api_append_gallery', 1 ) ? 'checked="checked"' : '';
+					?>
+					<td><input type="checkbox" name="append_gallery" value="1" id="append_gallery" class="regular-text" <?php echo $checked_append_gallery; ?> /></td>
+				</tr>
+				<tr>
 					<th scope="row"><label for="approve_comments"><?php _e( 'Approve Non-spam Comments?', 'typo3-importer') ?></label></th>
 					<?php
 						$checked_approve_comments	= get_option( 't3api_approve_comments', 1 ) ? 'checked="checked"' : '';
@@ -777,8 +784,8 @@ class TYPO3_Importer extends WP_Importer {
 		// insert [gallery] into content after the second paragraph
 		// TODO prevent inserting gallery into pre/code sections
 		$post_content_array		= explode( $this->newline_wp, $post_content );
-		$post_content_arr_size	= sizeof( $post_content_array );
-		$new_post_content		= '';
+		$post_content_arr_size	= ( $this->append_gallery ) ? 0 : sizeof( $post_content_array );
+		$new_post_content		= ( $this->append_gallery ) ? $post_content : '';
 		$gallery_code			= '[gallery]';
 		$gallery_inserted		= false;
 
@@ -1346,6 +1353,15 @@ class TYPO3_Importer extends WP_Importer {
 			$this->set_featured_image	= get_option( 't3api_set_featured_image', 0 );
 		}
 		update_option( 't3api_set_featured_image', $this->set_featured_image );
+
+		if ( isset( $_POST['append_gallery'] ) ) {
+			$this->append_gallery	= $_POST['append_gallery'];
+		} elseif ( $_POST['login'] ) {
+			$this->append_gallery	= 0;
+		} else {
+			$this->append_gallery	= get_option( 't3api_append_gallery', 0 );
+		}
+		update_option( 't3api_append_gallery', $this->append_gallery );
 
 		if ( isset( $_POST['approve_comments'] ) ) {
 			$this->approve_comments	= $_POST['approve_comments'];

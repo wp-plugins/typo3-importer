@@ -46,6 +46,7 @@ Yes. Any sponsoring would be greatly welcome. Please [donate](http://peimic.com/
 = trunk =
 * Remove TYPO3 tx_comments approved requirement
 * Add askimet_spam_checker to comment importing
+* Add Append Gallery Than Insert 
 -
 
 = 1.0.2 =
