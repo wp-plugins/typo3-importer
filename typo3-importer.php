@@ -86,9 +86,9 @@ class TYPO3_Importer extends WP_Importer {
 
 	// pid > 0 need for excluding versioned tt_news entries
 	var $typo3_news_where		= ' AND n.deleted = 0 AND n.pid > 0';
-	var $typo3_news_order		= ' ORDER BY n.uid ASC ';
+	var $typo3_news_order		= ' ORDER BY n.uid DESC ';
 	var $typo3_comments_where	= ' AND c.external_prefix LIKE "tx_ttnews" AND c.deleted = 0 AND c.hidden = 0';
-	var $typo3_comments_order	= ' ORDER BY c.uid ASC ';
+	var $typo3_comments_order	= ' ORDER BY c.uid DESC ';
 	// batch limit to help prevent expiring connection
 	var $batch_limit_news		= 5;
 	var $batch_limit_comments	= 50;
@@ -789,19 +789,11 @@ class TYPO3_Importer extends WP_Importer {
 		$new_post_content		= '';
 		$gallery_code			= '[gallery]';
 		$gallery_inserted		= false;
-		$morelink_code			= '<!--more-->';
 
-		var_dump($this->insert_more_link); echo '<br />'; echo '' . __LINE__ . ':' . basename( __FILE__ )  . '<br />';	
-		var_dump($this->insert_gallery_shortcut); echo '<br />'; echo '' . __LINE__ . ':' . basename( __FILE__ )  . '<br />';	
 		for ( $i = 0; $i < $post_content_arr_size; $i++ ) {
-			if ( $this->insert_gallery_shortcut != $i 
-				&& $this->insert_more_link != $i ) {
+			if ( $this->insert_gallery_shortcut != $i ) {
 				$new_post_content	.= $post_content_array[$i] . "{$this->newline_wp}";
 			} else {
-				if ( $this->insert_more_link != 0 && $this->insert_more_link == $i ) {
-					$new_post_content	.= "{$morelink_code}{$this->newline_wp}";
-				}
-
 				if ( $this->insert_gallery_shortcut != 0 && $this->insert_gallery_shortcut == $i ) {
 					$new_post_content	.= "{$gallery_code}{$this->newline_wp}";
 					$gallery_inserted	= true;
@@ -863,14 +855,30 @@ class TYPO3_Importer extends WP_Importer {
 		$content				= str_replace( '<hr>', '<hr />', $content );
 
 		// process read more linking
+		$morelink_code			= '<!--more-->';
+		
 		// t3-cut ==>  <!--more-->
-		$content				= preg_replace( '|<t3-cut text="([^"]*)">|is', '<!--more $1-->', $content );
-		$content				= str_replace( array( '<t3-cut>', '</t3-cut>' ), array( '<!--more-->', '' ), $content );
-		$first					= strpos( $content, '<!--more' );
-		$content				= substr( $content, 0, $first + 1 ) . preg_replace( '|<!--more(.*)?-->|sUi', '', substr( $content, $first + 1 ) );
+		$content				= preg_replace( '#<t3-cut text="([^"]*)">#is', $morelink_code, $content );
+		$content				= str_replace( array( '<t3-cut>', '</t3-cut>' ), array( $morelink_code, '' ), $content );
+
+		$post_content_array		= explode( $this->newline_wp, $content );
+		$post_content_arr_size	= sizeof( $post_content_array );
+		$new_post_content		= '';
+
+		for ( $i = 0; $i < $post_content_arr_size; $i++ ) {
+			if ( $this->insert_more_link != $i ) {
+				$new_post_content	.= $post_content_array[$i] . "{$this->newline_wp}";
+			} else {
+				if ( $this->insert_more_link != 0 && $this->insert_more_link == $i ) {
+					$new_post_content	.= "{$morelink_code}{$this->newline_wp}";
+				}
+
+				$new_post_content	.= $post_content_array[$i] . "{$this->newline_wp}";
+			}
+		}
 
 		// database prepping
-		$content				= trim( $content );
+		$content				= trim( $new_post_content );
 	
 		return $content;
 	}
