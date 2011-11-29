@@ -86,9 +86,9 @@ class TYPO3_Importer extends WP_Importer {
 
 	// pid > 0 need for excluding versioned tt_news entries
 	var $typo3_news_where		= ' AND n.deleted = 0 AND n.pid > 0';
-	var $typo3_news_order		= ' ORDER BY n.uid DESC ';
+	var $typo3_news_order		= ' ORDER BY n.uid ASC ';
 	var $typo3_comments_where	= ' AND c.external_prefix LIKE "tx_ttnews" AND c.deleted = 0 AND c.hidden = 0';
-	var $typo3_comments_order	= ' ORDER BY c.uid DESC ';
+	var $typo3_comments_order	= ' ORDER BY c.uid ASC ';
 	// batch limit to help prevent expiring connection
 	var $batch_limit_news		= 5;
 	var $batch_limit_comments	= 50;
