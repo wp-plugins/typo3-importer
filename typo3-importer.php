@@ -748,6 +748,7 @@ class TYPO3_Importer extends WP_Importer {
 
 		// images is a CSV string, convert images to array
 		$images					= explode( ",", $images );
+		$image_count			= count( $images );
 		$captions				= explode( "\n", $captions );
 		$uploads_dir_typo3		= $this->typo3_url . 'uploads/';
 
@@ -782,6 +783,7 @@ class TYPO3_Importer extends WP_Importer {
 			wp_update_attachment_metadata( $attach_id, $attach_data );
 		}
 
+
 		// insert [gallery] into content after the second paragraph
 		// TODO prevent inserting gallery into pre/code sections
 		$post_content_array		= explode( $this->newline_wp, $post_content );
@@ -789,6 +791,11 @@ class TYPO3_Importer extends WP_Importer {
 		$new_post_content		= '';
 		$gallery_code			= '[gallery]';
 		$gallery_inserted		= false;
+
+		// don't give single image galleries
+		if ( 1 == $image_count && $this->set_featured_image ) {
+			$gallery_code			= '';
+		}
 
 		for ( $i = 0; $i < $post_content_arr_size; $i++ ) {
 			if ( $this->insert_gallery_shortcut != $i ) {

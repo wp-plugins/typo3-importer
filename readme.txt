@@ -48,6 +48,7 @@ Yes. Any sponsoring would be greatly welcome. Please [donate](http://typo3vagabo
 * Add askimet_spam_checker to comment importing
 * Position gallery shortcode in post content
 * Position more links in post content
+* Disallow single image galleries
 -
 
 = 1.0.2 =
