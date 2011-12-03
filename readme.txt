@@ -15,17 +15,15 @@ Requires remote web and database access to the source TYPO3 instance. Images, fi
 
 Comments will be automatically tested for spam via Askimet if you have it configured.
 
-Inline and related images will be added to the Media Library. The first image found will be set as the Featured Image for the post. Inline images will have their source URLs updated. Related images will be converted to a [gallery] and inserted into the post about 2 paragraphs in.
+Inline and related images will be added to the Media Library. The first image found will be set as the Featured Image for the post. Inline images will have their source URLs updated. Related images will be converted to a [gallery] and appended or inserted into the post per your settings.
 
 Files will be appended to post content as 'Related Files'.
 
 It's possible to change post statuses on import. However, draft posts, will remain as drafts.
 
-If you accidentially import TYPO3 news and they've gone live, visit the importer and look for `Oops`. There's an option to convert imported posts to `Private` thereby removing from public view.
+If you import TYPO3 news and they've gone live when you didn't want them to, visit the Options screen and look for `Oops`. That's the option to convert imported posts to `Private` thereby removing them from public view.
 
 Finally, it's possible to delete prior imports and lost comments and attachments.
-
-TYPO3 Importer was modeled after the livejournal-importer plugin.
 
 == Installation ==
 1. Upload the `typo3-importer` folder to the `/wp-content/plugins/` directory
@@ -49,6 +47,8 @@ Yes. Any sponsoring would be greatly welcome. Please [donate](http://typo3vagabo
 * Position gallery shortcode in post content
 * Position more links in post content
 * Disallow single image galleries
+* Migrate importing to one-at-a-time model
+* Separate import and option screens
 -
 
 = 1.0.2 =

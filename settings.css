@@ -62,3 +62,12 @@
 .wrap h3, .wrap table {
 	display: none;
 }
+div.ready {
+	font-weight: bold;
+	clear: both;
+	padding-top: 1em;
+}
+div.copyright {
+	clear: both;
+	padding-top: 5em;
+}
