@@ -15,18 +15,20 @@ class T3I_Settings {
 	 * Construct
 	 */
 	public function __construct() {
+		global $wpdb;
 		
 		// This will keep track of the checkbox options for the validate_settings function.
 		$this->checkboxes		= array();
 		$this->settings			= array();
 		$this->get_settings();
 		
-		$this->sections['typo3']	= __( 'TYPO3 Website Access', 'typo3-importer');
+		$this->sections['typo3']	= __( 'TYPO3 Access', 'typo3-importer');
+		$this->sections['selection']	= __( 'News Selection', 'typo3-importer');
 		$this->sections['general']	= __( 'Import Options', 'typo3-importer');
 		$this->sections['testing']	= __( 'Testing Options', 'typo3-importer');
 		$this->sections['oops']		= __( 'Oops...', 'typo3-importer');
 		$this->sections['reset']	= __( 'Reset/Restore', 'typo3-importer');
-		$this->sections['TBI']		= __( 'Pending Options - Not Implemented', 'typo3-importer');
+		$this->sections['TBI']		= __( 'Not Implemented', 'typo3-importer');
 		$this->sections['about']	= __( 'About TYPO3 Importer', 'typo3-importer');
 		
 		add_action( 'admin_menu', array( &$this, 'add_pages' ) );
@@ -36,7 +38,8 @@ class T3I_Settings {
 		
 		if ( ! get_option( 't3i_options' ) )
 			$this->initialize_settings();
-		
+
+		$this->wpdb				= $wpdb;
 	}
 	
 	/**
@@ -44,7 +47,7 @@ class T3I_Settings {
 	 */
 	public function add_pages() {
 		
-		$admin_page = add_options_page( __( 'TYPO3 Importer Options', 'typo3-importer'), __( 'Import Options', 'typo3-importer'), 'manage_options', 't3i-options', array( &$this, 'display_page' ) );
+		$admin_page = add_options_page( __( 'TYPO3 Importer Options', 'typo3-importer'), __( 'TYPO3 Import Options', 'typo3-importer'), 'manage_options', 't3i-options', array( &$this, 'display_page' ) );
 		
 		add_action( 'admin_print_scripts-' . $admin_page, array( &$this, 'scripts' ) );
 		add_action( 'admin_print_styles-' . $admin_page, array( &$this, 'styles' ) );
@@ -188,13 +191,10 @@ EOD;
 	 */
 	public function display_about_section() {
 		
-		// TODO add 
-		// http://typo3vagabond.com/wp-content/uploads/2009/05/michael-cannon-red-square-300x2251.jpg 
-		// to local images
 		// TODO update verbiage from about page with links to Peimic 
 		echo					<<<EOD
 			<div style="width: 50%;">
-				<p><img class="alignright size-medium" title="Michael in Red Square, Moscow, Russia" src="http://typo3vagabond.com/wp-content/uploads/2009/05/michael-cannon-red-square-300x2251.jpg" alt="Michael in Red Square, Moscow, Russia" width="300" height="225" /><a href="http://wordpress.org/extend/plugins/typo3-importer/">TYPO3 Importer</a> is by <a href="mailto:michael@typo3vagabond.com">Michael Cannon</a>.</p>
+				<p><img class="alignright size-medium" title="Michael in Red Square, Moscow, Russia" src="/wp-content/plugins/typo3-importer/media/michael-cannon-red-square-300x2251.jpg" alt="Michael in Red Square, Moscow, Russia" width="300" height="225" /><a href="http://wordpress.org/extend/plugins/typo3-importer/">TYPO3 Importer</a> is by <a href="mailto:michael@typo3vagabond.com">Michael Cannon</a>.</p>
 				<p>He's Peichi’s man, an adventurous water rat & a TYPO3 support guru who’s living simply, roaming about & smiling more.</p>
 				<p>If you like this plugin, <a href="http://typo3vagabond.com/about-typo3-vagabond/donate/">please donate</a>.</p>
 			</div>
@@ -296,27 +296,36 @@ EOD;
 		$this->settings['typo3_url'] = array(
 			'title'   => __( 'Website URL', 'typo3-importer'),
 			'desc'    => __( 'e.g. http://example.com', 'typo3-importer'),
+			'std'     => '',
+			'type'    => 'text',
 			'section' => 'typo3'
 		);
 		
 		$this->settings['t3db_host'] = array(
 			'title'   => __( 'Database Host', 'typo3-importer'),
+			'std'     => '',
+			'type'    => 'text',
 			'section' => 'typo3'
 		);
 		
 		$this->settings['t3db_name'] = array(
 			'title'   => __( 'Database Name', 'typo3-importer'),
+			'std'     => '',
+			'type'    => 'text',
 			'section' => 'typo3'
 		);
 		
 		$this->settings['t3db_username'] = array(
 			'title'   => __( 'Database Username', 'typo3-importer'),
+			'std'     => '',
+			'type'    => 'text',
 			'section' => 'typo3'
 		);
 		
 		$this->settings['t3db_password'] = array(
 			'title'   => __( 'Database Password', 'typo3-importer'),
 			'type'    => 'password',
+			'std'     => '',
 			'section' => 'typo3'
 		);
 		
@@ -325,6 +334,8 @@ EOD;
 		$this->settings['protected_password'] = array(
 			'title'   => __( 'Protected Post Password', 'typo3-importer'),
 			'desc'    => __( 'If set, posts will require this password to be viewed.', 'typo3-importer'),
+			'std'     => '',
+			'type'    => 'text',
 			'section' => 'general'
 		);
 		
@@ -365,6 +376,14 @@ EOD;
 			)
 		);
 
+		$this->settings['set_featured_image'] = array(
+			'section' => 'general',
+			'title'   => __( 'Set Featured Image?', 'typo3-importer'),
+			'desc'    => __( 'Set first image found in content or related as the Featured Image.', 'typo3-importer'),
+			'type'    => 'checkbox',
+			'std'     => 1
+		);
+		
 		$this->settings['insert_gallery_shortcut'] = array(
 			'section' => 'general',
 			'title'   => __( 'Insert Gallery Shortcode?', 'typo3-importer'),
@@ -387,6 +406,64 @@ EOD;
 			)
 		);
 
+		$this->settings['related_files_header'] = array(
+			'title'   => __( 'Related Files Header' , 'typo3-importer'),
+			'std'     => __( 'Related Files', 'typo3-importer' ),
+			'type'	=> 'text',
+			'section' => 'general'
+		);
+
+		$this->settings['related_files_header_tag'] = array(
+			'section' => 'general',
+			'title'   => __( 'Related Files Header Tag', 'typo3-importer'),
+			'type'    => 'select',
+			'std'     => '3',
+			'choices' => array(
+				'0'	=> 'None',
+				'1'	=> 'H1',
+				'2'	=> 'H2',
+				'3'	=> 'H3',
+				'4'	=> 'H4',
+				'5'	=> 'H5',
+				'6'	=> 'H6'
+			)
+		);
+		
+		$this->settings['related_files_wrap'] = array(
+			'title'   => __( 'Related Files Wrap' , 'typo3-importer'),
+			'desc'   => __( 'Useful for adding membership oriented shortcodes around premium content. e.g. [paid]|[/paid]' , 'typo3-importer'),
+			'type'	=> 'text',
+			'section' => 'general'
+		);
+
+		$this->settings['related_links_header'] = array(
+			'title'   => __( 'Related Links Header' , 'typo3-importer'),
+			'std'     => __( 'Related Links', 'typo3-importer' ),
+			'type'	=> 'text',
+			'section' => 'general'
+		);
+
+		$this->settings['related_links_header_tag'] = array(
+			'section' => 'general',
+			'title'   => __( 'Related Links Header Tag', 'typo3-importer'),
+			'type'    => 'select',
+			'std'     => '3',
+			'choices' => array(
+				'0'	=> 'None',
+				'1'	=> 'H1',
+				'2'	=> 'H2',
+				'3'	=> 'H3',
+				'4'	=> 'H4',
+				'5'	=> 'H5',
+				'6'	=> 'H6'
+			)
+		);
+		
+		$this->settings['related_links_wrap'] = array(
+			'title'   => __( 'Related Links Wrap' , 'typo3-importer'),
+			'desc'   => __( 'Useful for adding membership oriented shortcodes around premium content. e.g. [paid]|[/paid]' , 'typo3-importer'),
+			'section' => 'general'
+		);
 		$this->settings['approve_comments'] = array(
 			'section' => 'general',
 			'title'   => __( 'Approve Non-spam Comments?', 'typo3-importer'),
@@ -415,7 +492,8 @@ EOD;
 			'section' => 'testing',
 			'title'   => __( 'Import Limit', 'typo3-importer'),
 			'desc'    => __( 'Number of news records allowed to import at a time. 0 for all..', 'typo3-importer'),
-			'std'     => '0'
+			'std'     => '',
+			'type'    => 'text'
 		);
 		
 		// Oops...
@@ -427,29 +505,21 @@ EOD;
 			'std'     => 0
 		);
 		
+		$desc_imports		= __( "This will remove ALL post imports with the 't3:tt_news.uid' meta key. Related post media and comments will also be deleted.", 'typo3-importer');
+		$desc_comments		= __( "This will remove ALL comments imports with the 't3:tx_comments' comment_agent key." , 'typo3-importer');
+		$desc_attachments	= __( "This will remove ALL media without a related post. It's possible for non-imported media to be deleted.", 'typo3-importer');
+
 		// Reset/restore
-		$this->settings['delete_import'] = array(
+		$this->settings['delete'] = array(
 			'section' => 'reset',
-			'title'   => __( 'Delete Prior Imports', 'typo3-importer'),
-			'desc'    => __( "This will remove ALL post imports with the 't3:tt_news.uid' meta key. Related post media and comments will also be deleted.", 'typo3-importer'),
-			'type'    => 'checkbox',
-			'std'     => 0
-		);
-		
-		$this->settings['delete_comments'] = array(
-			'section' => 'reset',
-			'title'   => __( 'Delete Imported Comments', 'typo3-importer'),
-			'desc'    => __( "This will remove ALL comments imports with the 't3:tx_comments' comment_agent key." , 'typo3-importer'),
-			'type'    => 'checkbox',
-			'std'     => 0
-		);
-		
-		$this->settings['delete_attachment'] = array(
-			'section' => 'reset',
-			'title'   => __( 'Delete Unattached Media', 'typo3-importer'),
-			'desc'    => __( "This will remove ALL media without a related post. It's possible for non-imported media to be deleted.", 'typo3-importer'),
-			'type'    => 'checkbox',
-			'std'     => 0
+			'title'   => __( 'Delete...', 'typo3-importer'),
+			'type'    => 'radio',
+			'std'     => '',
+			'choices' => array(
+				'imports'		=> __( 'Prior imports', 'typo3-importer') . ': ' . $desc_imports,
+				'comments'		=> __( 'Imported comments', 'typo3-importer') . ': ' . $desc_comments,
+				'attachments'	=> __( 'Unattached media', 'typo3-importer') . ': ' . $desc_attachments
+			)
 		);
 		
 		$this->settings['reset_plugin'] = array(
@@ -462,6 +532,38 @@ EOD;
 		);
 
 
+		// selection
+		$this->settings['news_custom_where'] = array(
+			'title'   => __( 'News WHERE Clause' , 'typo3-importer'),
+			'desc'    => __( "WHERE clause used to select news records from TYPO3. e.g.: AND tt_news.deleted = 0 AND tt_news.pid > 0" , 'typo3-importer'),
+			'std'     => 'AND tt_news.deleted = 0 AND tt_news.pid > 0',
+			'type'	=> 'text',
+			'section' => 'selection'
+		);
+		
+		$this->settings['news_custom_order'] = array(
+			'title'   => __( 'News ORDER Clause' , 'typo3-importer'),
+			'desc'    => __( "ORDER clause used to select news records from TYPO3. e.g.: ORDER BY tt_news.uid ASC" , 'typo3-importer'),
+			'std'     => 'ORDER BY tt_news.uid ASC',
+			'type'	=> 'text',
+			'section' => 'selection'
+		);
+
+		$this->settings['news_to_import'] = array(
+			'title'   => __( 'News to Import' , 'typo3-importer'),
+			'desc'    => __( "A CSV list of news uids to import, like '1,2,3'. Overrides 'News Selection Criteria'." , 'typo3-importer'),
+			'type'	=> 'text',
+			'section' => 'selection'
+		);
+		
+		$this->settings['news_to_skip'] = array(
+			'title'   => __( 'Skip Importing News' , 'typo3-importer'),
+			'desc'    => __( "A CSV list of news uids not to import, like '1,2,3'." , 'typo3-importer'),
+			'type'	=> 'text',
+			'section' => 'selection'
+		);
+		
+
 		// Pending
 		$this->settings['make_nice_image_title'] = array(
 			'section' => 'TBI',
@@ -471,87 +573,6 @@ EOD;
 			'std'     => 1
 		);
 		
-		$this->settings['posts_to_import'] = array(
-			'title'   => __( 'News to Import' , 'typo3-importer'),
-			'desc'    => __( "Override normal news selection. A CSV list of news uids to import, like '1,2,3'." , 'typo3-importer'),
-			'section' => 'TBI'
-		);
-		
-		$this->settings['skip_importing_post_ids'] = array(
-			'title'   => __( 'Skip Importing News' , 'typo3-importer'),
-			'desc'    => __( "A CSV list of news uids not to import, like '1,2,3'." , 'typo3-importer'),
-			'section' => 'TBI'
-		);
-		
-		$this->settings['news_custom_where'] = array(
-			'title'   => __( 'News Selection Criteria' , 'typo3-importer'),
-			'desc'    => __( "WHERE clause used to select news records from TYPO3." , 'typo3-importer'),
-			'std'     => 'AND n.deleted = 0 AND n.pid > 0',
-			'section' => 'TBI'
-		);
-		
-		$this->settings['news_custom_order'] = array(
-			'title'   => __( 'News Selection Criteria' , 'typo3-importer'),
-			'desc'    => __( "ORDER clause used to select news records from TYPO3." , 'typo3-importer'),
-			'std'     => 'ORDER BY n.uid ASC',
-			'section' => 'TBI'
-		);
-		
-		$this->settings['related_files_header'] = array(
-			'title'   => __( 'Related Files Header' , 'typo3-importer'),
-			'std'     => __( 'Related Files', 'typo3-importer' ),
-			'section' => 'TBI'
-		);
-
-		$this->settings['related_files_header_tag'] = array(
-			'section' => 'TBI',
-			'title'   => __( 'Related Files Header Tag', 'typo3-importer'),
-			'type'    => 'select',
-			'std'     => '3',
-			'choices' => array(
-				'0'	=> 'None',
-				'1'	=> 'H1',
-				'2'	=> 'H2',
-				'3'	=> 'H3',
-				'4'	=> 'H4',
-				'5'	=> 'H5',
-				'6'	=> 'H6'
-			)
-		);
-		
-		$this->settings['related_files_wrap'] = array(
-			'title'   => __( 'Related Files Wrap' , 'typo3-importer'),
-			'desc'   => __( 'Useful for adding membership oriented shortcodes around premium content. e.g. [paid]|[/paid]' , 'typo3-importer'),
-			'section' => 'TBI'
-		);
-
-		$this->settings['related_links_header'] = array(
-			'title'   => __( 'Related Links Header' , 'typo3-importer'),
-			'std'     => __( 'Related Links', 'typo3-importer' ),
-			'section' => 'TBI'
-		);
-
-		$this->settings['related_links_header_tag'] = array(
-			'section' => 'TBI',
-			'title'   => __( 'Related Links Header Tag', 'typo3-importer'),
-			'type'    => 'select',
-			'std'     => '3',
-			'choices' => array(
-				'0'	=> 'None',
-				'1'	=> 'H1',
-				'2'	=> 'H2',
-				'3'	=> 'H3',
-				'4'	=> 'H4',
-				'5'	=> 'H5',
-				'6'	=> 'H6'
-			)
-		);
-		
-		$this->settings['related_links_wrap'] = array(
-			'title'   => __( 'Related Links Wrap' , 'typo3-importer'),
-			'desc'   => __( 'Useful for adding membership oriented shortcodes around premium content. e.g. [paid]|[/paid]' , 'typo3-importer'),
-			'section' => 'TBI'
-		);
 		
 		// Here for reference
 		if ( false ) {
@@ -676,9 +697,36 @@ EOD;
 	*/
 	public function validate_settings( $input ) {
 		
-		// TODO validate for integer CSV
-		// posts_to_import
-		// skip_importing_post_ids
+		// TODO validate for
+		// CSV of posts_to_import, skip_importing_post_ids
+		// valid TYPO3 url
+		// db connectivity
+
+		if ( isset( $input['delete'] ) && $input['delete'] ) {
+			switch ( $input['delete'] ) {
+				case 'imports' :
+					$this->delete_import();
+					break;
+
+				case 'comments' :
+					$this->delete_comments();
+					break;
+
+				case 'attachments' :
+					$this->delete_attachments();
+					break;
+			}
+
+			unset( $input['delete'] );
+			return $input;
+		}
+
+		if ( isset( $input['force_private_posts'] ) && $input['force_private_posts'] ) {
+			$this->force_private_posts();
+
+			unset( $input['force_private_posts'] );
+			return $input;
+		}
 
 		if ( ! isset( $input['reset_plugin'] ) ) {
 			$options = get_option( 't3i_options' );
@@ -694,16 +742,132 @@ EOD;
 		return false;
 		
 	}
+
+	function delete_comments() {
+		$comment_count			= 0;
+
+		$query					= "SELECT comment_ID FROM {$this->wpdb->comments} WHERE comment_agent = 't3:tx_comments'";
+		$comments				= $this->wpdb->get_results( $query );
+
+		foreach( $comments as $comment ) {
+			// returns array of obj->ID
+			$comment_id			= $comment->comment_ID;
+
+			wp_delete_comment( $comment_id, true );
+
+			$comment_count++;
+		}
+
+		// TODO return message
+		/*
+		echo '<h3>' . __( 'Comments Deleted', 'typo3-importer') . '</h3>';
+		echo '<p>' . sprintf( __( "Successfully removed %s comments." , 'typo3-importer'), number_format( $comment_count ) ) . '</p>';
+		echo '<hr />';
+		*/
+	}
+
+	function force_private_posts() {
+		$post_count				= 0;
+
+		// during botched imports not all postmeta is read successfully
+		// pull post ids with typo3_uid as post_meta key
+		$posts					= $this->wpdb->get_results( "SELECT post_id FROM {$this->wpdb->postmeta} WHERE meta_key = 't3:tt_news.uid'" );
+
+		foreach( $posts as $post ) {
+			// returns array of obj->ID
+			$post_id			= $post->post_id;
+
+			// dels post, meta & comments
+			// true is force delete
+
+			$post_arr				= array(
+				'ID'			=> $post_id,
+				'post_status'	=> 'private',
+			);
+		 
+			wp_update_post( $post_arr );
+
+			$post_count++;
+		}
+
+		// TODO report message
+		/*
+		echo '<h3>' . __( 'Prior Imports Forced to Private Status', 'typo3-importer') . '</h3>';
+		echo '<p>' . sprintf( __( "Successfully updated %s TYPO3 news imports to 'Private'." , 'typo3-importer'), number_format( $post_count ) ) . '</p>';
+		echo '<hr />';
+		*/
+	}
+
+	function delete_import() {
+		$post_count				= 0;
+
+		// during botched imports not all postmeta is read successfully
+		// pull post ids with typo3_uid as post_meta key
+		$posts					= $this->wpdb->get_results( "SELECT post_id FROM {$this->wpdb->postmeta} WHERE meta_key = 't3:tt_news.uid'" );
+
+		foreach( $posts as $post ) {
+			// returns array of obj->ID
+			$post_id			= $post->post_id;
+
+			// remove media relationships
+			$this->delete_attachments( $post_id );
+
+			// dels post, meta & comments
+			// true is force delete
+			wp_delete_post( $post_id, true );
+
+			$post_count++;
+		}
+
+		// TODO pass success message
+		/*
+		echo '<h3>' . __( 'Prior Imports Deleted', 'typo3-importer') . '</h3>';
+		echo '<p>' . sprintf( __( "Successfully removed %s TYPO3 news and their related media and comments." , 'typo3-importer'), number_format( $post_count ) ) . '</p>';
+		echo '<hr />';
+		*/
+	}
+
+	function delete_attachments( $post_id = false ) {
+		$post_id				= $post_id ? $post_id : 0;
+		$query					= "SELECT ID FROM {$this->wpdb->posts} WHERE post_type = 'attachment' AND post_parent = {$post_id}";
+		$attachments			= $this->wpdb->get_results( $query );
+
+		$attachment_count		= 0;
+		foreach( $attachments as $attachment ) {
+			// true is force delete
+			wp_delete_attachment( $attachment->ID, true );
+			$attachment_count++;
+		}
+
+		// TODO report message
+		if ( false && ! $post_id ) {
+			echo '<h3>' . __( 'Attachments Deleted', 'typo3-importer') . '</h3>';
+			echo '<p>' . sprintf( __( "Successfully removed %s no-post attachments." , 'typo3-importer'), number_format( $attachment_count ) ) . '</p>';
+			echo '<hr />';
+		}
+	}
 	
 }
 
 $T3I_Settings					= new T3I_Settings();
 
-function t3i_options( $option ) {
+function get_t3i_options( $option ) {
 	$options					= get_option( 't3i_options' );
-	if ( isset( $options[$option] ) )
+	if ( isset( $options[$option] ) ) {
 		return $options[$option];
-	else
+	} else {
 		return false;
+	}
+}
+
+function update_t3i_options( $option, $value = null ) {
+	$options					= get_option( 't3i_options' );
+
+	if ( ! is_array( $options ) ) {
+		$options				= array();
+	}
+
+	$options[$option]			= $value;
+	update_option( 't3i_options', $options );
 }
 ?>

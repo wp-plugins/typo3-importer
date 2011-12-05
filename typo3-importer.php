@@ -39,36 +39,28 @@ require_once( 'class.options.php' );
  * @package typo3-importer
  */
 class TYPO3_Importer {
+	// var $comments_order	= ' ORDER BY c.uid ASC ';
+	// var $comments_where	= ' AND c.external_prefix LIKE "tx_ttnews" AND c.deleted = 0 AND c.hidden = 0';
+	var $errors					= array();
 	var $menu_id;
-
-	// TODO verify vars below are needed
-	// batch limit to help prevent expiring connection
-	var $batch_limit_comments	= 50;
-	var $batch_limit_news		= 5;
-	var $commentmap;
-	var $featured_image_id		= false;
-	var $import_limit			= 0;
-	var $import_types			= array( 'news', 'comments' );
-	var $inital_lastsync		= '1900-01-01 00:00:00';
 	var $newline_typo3			= "\r\n";
 	var $newline_wp				= "\n\n";
 	var $post_status_options	= array( 'draft', 'publish', 'pending', 'future', 'private' );
-	var $postmap;
 	var $t3db					= null;
 	var $t3db_host				= null;
 	var $t3db_name				= null;
 	var $t3db_password			= null;
 	var $t3db_username			= null;
-	var $typo3_comments_order	= ' ORDER BY c.uid ASC ';
-	var $typo3_comments_where	= ' AND c.external_prefix LIKE "tx_ttnews" AND c.deleted = 0 AND c.hidden = 0';
-	var $typo3_news_order		= ' ORDER BY n.uid ASC ';
-	// pid > 0 need for excluding versioned tt_news entries
-	var $typo3_news_where		= ' AND n.deleted = 0 AND n.pid > 0';
 	var $typo3_url				= null;
 	var $wpdb					= null;
 
 	// Plugin initialization
 	function TYPO3_Importer() {
+
+		// Capability check
+		if ( !current_user_can( 'manage_options' ) )
+			wp_die( __( 'Cheatin&#8217; uh?' , 'typo3-importer') );
+
 		if ( ! function_exists( 'admin_url' ) )
 			return false;
 
@@ -78,7 +70,7 @@ class TYPO3_Importer {
 
 		add_action( 'admin_menu', array( &$this, 'add_admin_menu' ) );
 		add_action( 'admin_enqueue_scripts', array( &$this, 'admin_enqueues' ) );
-		add_action( 'wp_ajax_importtypo3news', array( &$this, 'ajax_process_shortcode' ) );
+		add_action( 'wp_ajax_importtypo3news', array( &$this, 'ajax_process_news' ) );
 		add_filter( 'plugin_action_links', array( &$this, 'add_plugin_action_links' ), 10, 2 );
 		
 		$this->options_link		= '<a href="'.get_admin_url().'options-general.php?page=t3i-options">'.__('TYPO3 Import Options', 'typo3-importer').'</a>';
@@ -101,6 +93,10 @@ class TYPO3_Importer {
 			array('style' => 'font-weight: bold;')
 		);
 		}
+		
+		$this->_create_db_client();
+		$this->_get_custom_sql();
+		$this->no_media_import	= get_t3i_options( 'no_media_import' );
 	}
 
 
@@ -140,132 +136,180 @@ class TYPO3_Importer {
 
 	// The user interface plus thumbnail regenerator
 	function user_interface() {
-		global $wpdb;
-?>
 
+		echo <<<EOD
 <div id="message" class="updated fade" style="display:none"></div>
 
 <div class="wrap t3iposts">
 	<div class="icon32" id="icon-tools"></div>
-	<h2><?php _e('TYPO3 Importer', 'typo3-importer'); ?></h2>
+	<h2>
+EOD;
+	_e('TYPO3 Importer', 'typo3-importer');
+	echo '</h2>';
 
-<?php
 		// testing helper
 		if ( isset( $_REQUEST['importtypo3news'] ) && $_REQUEST['importtypo3news'] ) {
-			$this->ajax_process_shortcode();
-			exit( __LINE__ . ':' . basename( __FILE__ ) . " ERROR<br />\n" );	
+			$this->ajax_process_news();
 		}
 
 		// If the button was clicked
 		if ( ! empty( $_POST['typo3-importer'] ) || ! empty( $_REQUEST['posts'] ) ) {
-			// Capability check
-			if ( !current_user_can( 'manage_options' ) )
-				wp_die( __( 'Cheatin&#8217; uh?' , 'typo3-importer') );
 
 			// Form nonce check
 			check_admin_referer( 'typo3-importer' );
 
 			// check that TYPO3 login information is valid
-			$this->check_typo3_access();
-
-			// Create the list of image IDs
-			if ( ! empty( $_REQUEST['posts'] ) ) {
-				$posts			= array_map( 'intval', explode( ',', trim( $_REQUEST['posts'], ',' ) ) );
-				$count			= count( $posts );
-				$posts			= implode( ',', $posts );
-			} else {
-				// TODO adopt for remotely grabbing unimported tt_news records
-				//
-				// TODO figure out way to skip aggressive grabbing
-				// look for posts containing A/IMG tags referencing Flickr
-				$flickr_source_where = "";
-				if ( t3i_options( 'import_flickr_sourced_tags' ) ) {
-					$flickr_source_where = <<<EOD
-						OR (
-							post_content LIKE '%<a%href=%http://www.flickr.com/%><img%src=%http://farm%.static.flickr.com/%></a>%'
-							OR post_content LIKE '%<img%src=%http://farm%.static.flickr.com/%>%'
-						)
-EOD;
-				}
-
-				// Directly querying the database is normally frowned upon, but all of the API functions will return the full post objects which will suck up lots of memory. This is best, just not as future proof.
-				$query			= "
-					SELECT ID
-					FROM $wpdb->posts
-					WHERE 1 = 1
-					AND post_type = 'post'
-					AND post_parent = 0
-					AND (
-						post_content LIKE '%[flickr %'
-						OR post_content LIKE '%[flickrset %'
-						$flickr_source_where
-					)
+			if ( $this->check_typo3_access() ) {
+				// Create the list of image IDs
+				if ( ! empty( $_REQUEST['posts'] ) ) {
+					$posts			= array_map( 'intval', explode( ',', trim( $_REQUEST['posts'], ',' ) ) );
+					$count			= count( $posts );
+					$posts			= implode( ',', $posts );
+				} else {
+					$query			= "
+						SELECT uid
+						FROM tt_news
+						WHERE 1 = 1
+							{$this->news_custom_where}
+						{$this->news_custom_order}
 					";
 
-				$include_ids		= t3i_options( 'posts_to_import' );
-				if ( $include_ids )
-					$query		.= ' AND ID IN ( ' . $include_ids . ' )';
+					$limit			= (int) get_t3i_options( 'import_limit' );
+					if ( $limit )
+						$query		.= ' LIMIT ' . $limit;
 
-				$skip_ids		= t3i_options( 'skip_importing_post_ids' );
-				if ( $skip_ids )
-					$query		.= ' AND ID NOT IN ( ' . $skip_ids . ' )';
+					$results		= $this->t3db->get_results( $query );
+					$count			= 0;
 
-				$limit			= (int) t3i_options( 'limit' );
-				if ( $limit )
-					$query		.= ' LIMIT ' . $limit;
+					// Generate the list of IDs
+					$posts			= array();
+					foreach ( $results as $post ) {
+						$posts[]	= $post->uid;
+						$count++;
+					}
 
-				$results		= $wpdb->get_results( $query );
-				$count			= 0;
+					if ( ! $count ) {
+						echo '	<p>' . _e( 'All done. No further news or comment records to import.', 'typo3-importer' ) . "</p></div>";
+						return;
+					}
 
-				// Generate the list of IDs
-				$posts			= array();
-				foreach ( $results as $post ) {
-					$posts[]	= $post->ID;
-					$count++;
+					$posts			= implode( ',', $posts );
 				}
 
-				if ( ! $count ) {
-					echo '	<p>' . _e( 'All done. No further news or comment records to import.', 'typo3-importer' ) . "</p></div>";
-					return;
-				}
-
-				$posts			= implode( ',', $posts );
+				$this->show_status( $count, $posts );
+			} else {
+				$this->show_errors();
 			}
-
-			$this->show_status( $count, $posts );
 		} else {
 			// No button click? Display the form.
 			$this->show_greeting();
 		}
-?>
-	</div>
-<?php
+		
+		echo '</div>';
+	}
+
+	// t3db is the database connection
+	// for TYPO3 there's no API
+	// only database and url requests
+	// should be used for db connection and establishing valid website url
+	function _create_db_client() {
+		if ( null === $this->wpdb ) {
+			global $wpdb;
+			$this->wpdb			= $wpdb;
+		}
+
+		if ( $this->t3db ) return;
+
+		if ( is_null( $this->t3db_host ) ) {
+			$this->typo3_url	 	= get_t3i_options( 'typo3_url' );
+			$this->t3db_host		= get_t3i_options( 't3db_host' );
+			$this->t3db_name		= get_t3i_options( 't3db_name' );
+			$this->t3db_username	= get_t3i_options( 't3db_username' );
+			$this->t3db_password	= get_t3i_options( 't3db_password' );
+		}
+
+		$this->t3db				= new wpdb($this->t3db_username, $this->t3db_password, $this->t3db_name, $this->t3db_host);
+	}
+
+	function _get_custom_sql() {
+		$this->news_custom_where	= get_t3i_options( 'news_custom_where' );
+		$this->news_custom_order	= get_t3i_options( 'news_custom_order' );
+
+		$this->news_to_import		= get_t3i_options( 'news_to_import' );
+		if ( '' == $this->news_to_import ) {
+			// poll already imported and skip those
+			$done_uids			= $this->wpdb->get_col( "SELECT meta_value FROM {$this->wpdb->postmeta} WHERE meta_key = 't3:tt_news.uid'" );
+
+			if ( count( $done_uids ) ) {
+				$done_uids		= array_unique( $done_uids );
+				$this->news_custom_where	.= " AND tt_news.uid NOT IN ( " . implode( ',', $done_uids ) . " ) ";
+			}
+		} else {
+			$this->news_custom_where	= " AND tt_news.uid IN ( " . $this->news_to_import . " ) ";
+		}
+
+		$this->news_to_skip			= get_t3i_options( 'news_to_skip' );
+		if ( '' != $this->news_to_skip ) {
+			$this->news_custom_where	.= " AND tt_news.uid NOT IN ( " . $this->news_to_skip . " ) ";
+		}
 	}
 
 	function check_typo3_access() {
-		// TODO make array of errors
-		// TODO return error screen with link to options
+		// make array of errors
+		// return error screen with link to options
 		// Log in to confirm the details are correct
-		if ( ! t3i_options( 't3db_host' ) )
-			die( __( "TYPO3 database host is missing", 'typo3-importer' ) );
+		if ( ! $this->typo3_url ) {
+			$this->errors[] 			= __( "TYPO3 website URL is missing", 'typo3-importer' );
+		} else {
+			// append / if needed and save to options
+			$this->typo3_url	= preg_replace('#(/{0,})?$#', '/',  $this->typo3_url);
+			// silly // fix, above regex no matter what doesn't seem to work on 
+			// this
+			$this->typo3_url	= preg_replace('#//$#', '/',  $this->typo3_url);
+			// Store details for later
+			update_t3i_options( 'typo3_url', $this->typo3_url );
+		}
 
-		if ( ! t3i_options( 't3db_url' ) )
-			die( __( "TYPO3 website URL is missing", 'typo3-importer' ) );
+		if ( ! $this->t3db_host ) {
+			$this->errors[] 			= __( "TYPO3 database host is missing", 'typo3-importer' );
+		}
 
-		if ( ! t3i_options( 't3db_name' ) )
-			die( __( "TYPO3 database name is missing", 'typo3-importer' ) );
+		if ( ! $this->t3db_name ) {
+			$this->errors[] 			= __( "TYPO3 database name is missing", 'typo3-importer' );
+		}
 
-		if ( ! t3i_options( 't3db_username' ) )
-			die( __( "TYPO3 database username is missing", 'typo3-importer' ) );
+		if ( ! $this->t3db_username ) {
+			$this->errors[] 			= __( "TYPO3 database username is missing", 'typo3-importer' );
+		}
 
-		if ( ! t3i_options( 't3db_password' ) )
-			die( __( "TYPO3 database password is missing", 'typo3-importer' ) );
+		if ( ! $this->t3db_password ) {
+			$this->errors[] 			= __( "TYPO3 database password is missing", 'typo3-importer' );
+		}
 	
 		// TODO actually check for DB access
 
 		// check for typo3_url validity & reachability
-		if ( ! $this->_is_typo3_website( $this->typo3_url ) )
-			die( __( "TYPO3 website URL isn't valid", 'typo3-importer' ) );
+		if ( ! $this->_is_typo3_website( $this->typo3_url ) ) {
+			$this->errors[] 			= __( "TYPO3 website URL isn't valid", 'typo3-importer' );
+		}
+
+		if ( ! count( $this->errors ) ) {
+			return true;
+		}
+
+		return false;
+	}
+
+	function show_errors() {
+		echo '<h3>';
+		_e( 'Errors found, see below' );
+		echo '</h3>';
+		echo '<ul class="error">';
+		foreach ( $this->errors as $key => $error ) {
+			echo '<li>' . $error . '</li>';
+		}
+		echo '</ul>';
+		echo '<p>' . sprintf( __( 'Please review your %s before proceeding.', 'typo3-importer' ), $this->options_link ) . '</p>';
 	}
 
 	function _is_typo3_website( $url = null ) {
@@ -290,95 +334,6 @@ EOD;
 			// bad url
 			return false;
 		}
-	}
-
-	function convert_flickr_sourced_tags( $post ) {
-		global $wpdb;
-
-		$post_content			= $post->post_content;
-
-		// looking for
-		// <a class="tt-flickr tt-flickr-Medium" title="Khan Sao Road, Bangkok, Thailand" href="http://www.flickr.com/photos/comprock/4334303694/" target="_blank"><img class="alignnone" src="http://farm3.static.flickr.com/2768/4334303694_37785d0f0d.jpg" alt="Khan Sao Road, Bangkok, Thailand" width="500" height="375" /></a>
-		// cycle through a/img
-		$find_flickr_a_tag		= '#<a.*href=.*http://www.flickr.com/.*><img.*src=.*http://farm\d+.static.flickr.com/.*></a>#i';
-		$a_tag_open				= '<a ';
-
-		$post_content			= $this->convert_tag_to_flickr( $post_content, $a_tag_open, $find_flickr_a_tag );
-
-		// cycle through standalone img
-		$find_flickr_img_tag		= '#<img.*src=.*http://farm\d+.static.flickr.com/.*>#i';
-		$img_tag_open			= '<img ';
-		$post_content			= $this->convert_tag_to_flickr( $post_content, $img_tag_open, $find_flickr_img_tag, true );
-
-		$update					= array(
-			'ID'				=> $post->ID,
-			'post_content'		=> $post_content,
-		);
-
-		wp_update_post( $update );
-	}
-
-
-	function convert_tag_to_flickr( $post_content, $tag_open, $find_tag, $img_only = false ) {
-		$default_alignment		= t3i_options( 'default_image_alignment' );
-		$doc					= new DOMDocument();
-		$flickr_shortcode		= '[flickr id="%1$s" thumbnail="%2$s" align="%3$s"]' . "\n";
-		$matches				= explode( $tag_open, $post_content );
-		$size					= '';
-
-		// for each A/IMG tag set
-		foreach ( $matches as $html ) {
-			$html				= $tag_open . $html;
-
-			if ( ! preg_match( $find_tag, $html, $match ) ) {
-				continue;
-			}
-
-			// deal only with the A/IMG tag
-			$tag_html				= $match[0];
-
-			// safer than home grown regex
-			if ( ! $doc->loadHTML( $tag_html ) ) {
-				continue;
-			}
-
-			if ( ! $img_only ) {
-				// parse out parts id, thumbnail, align
-				$a_tags				= $doc->getElementsByTagName( 'a' );
-				$a_tag				= $a_tags->item( 0 );
-
-				// gives size tt-flickr tt-flickr-Medium
-				$size				= $a_tag->getAttribute( 'class' );
-			}
-
-			$size				= $this->get_shortcode_size( $size );
-
-			$image_tags			= $doc->getElementsByTagName( 'img' );
-			$image_tag			= $image_tags->item( 0 );
-
-			// give photo id http://farm3.static.flickr.com/2768/4334303694_37785d0f0d.jpg
-			$src				= $image_tag->getAttribute( 'src' );
-			$filename			= basename( $src );
-			$id					= preg_replace( '#^(\d+)_.*#', '\1', $filename );
-
-			// gives alginment alignnone
-			$align_primary		= $image_tag->getAttribute( 'class' );
-			$align_secondary	= $image_tag->getAttribute( 'align' );
-			$align_combined		= $align_secondary . ' ' . $align_primary;
-
-			$find_align			= '#(none|left|center|right)#i';
-			preg_match_all( $find_align, $align_combined, $align_matches );
-			// get the last align mentioned since that has precedence
-			$align				= ( count( $align_matches[0] ) ) ? array_pop( $align_matches[0] ) : $default_alignment;
-
-			// ceate simple [flickr] like
-			// [flickr id="5348222727" thumbnail="small" align="none"]
-			$replacement		= sprintf( $flickr_shortcode, $id, $size, $align );
-			// replace A/IMG with new [flickr]
-			$post_content		= str_replace( $tag_html, $replacement, $post_content );
-		}
-
-		return $post_content;
 	}
 
 
@@ -559,285 +514,733 @@ EOD;
 
 
 	// Process a single image ID (this is an AJAX handler)
-	function ajax_process_shortcode() {
-		@error_reporting( 0 ); // Don't break the JSON result
-
+	function ajax_process_news() {
+		error_reporting( 0 ); // Don't break the JSON result
 		header( 'Content-type: application/json' );
 
-		$this->post_id			= (int) $_REQUEST['id'];
-		// TODO grab the record from TYPO3
-		$post					= get_post( $this->post_id );
+		$this->news_uid			= (int) $_REQUEST['id'];
 
-		if ( t3i_options( 'import_flickr_sourced_tags' ) ) {
-			$this->convert_flickr_sourced_tags( $post );
-			$post				= get_post( $this->post_id );
-		}
+		// grab the record from TYPO3
+		$news					= $this->get_news( $this->news_uid );
 
-		if ( ! $post || 'post' != $post->post_type || ! stristr( $post->post_content, '[flickr' ) )
-			die( json_encode( array( 'error' => sprintf( __( "Failed import: %s isn't a TYPO3 news recrd.", 'typo3-importer' ), esc_html( $_REQUEST['id'] ) ) ) ) );
-
-		if ( ! current_user_can( 'manage_options' ) )
-			$this->die_json_error_msg( $this->post_id, __( "Your user account doesn't have permission to import images", 'typo3-importer' ) );
-
-		// default is Flickr Shortcode Import API key
-		$api_key				= t3i_options( 'flickr_api_key' );
-		$secret					= t3i_options( 'flickr_api_secret' );
-		$this->flickr			= new phpFlickr( $api_key, $secret );
-
-		// only use our shortcode handlers to prevent messing up post content 
-		remove_all_shortcodes();
-		add_shortcode( 'flickr', array( &$this, 'shortcode_flickr' ) );
-		add_shortcode( 'flickrset', array( &$this, 'shortcode_flickrset' ) );
-
-		// Don't overwrite Featured Images
-		$this->featured_id		= false;
-		$this->first_image		= t3i_options( 'remove_first_flickr_shortcode' ) ? true : false;
-		$this->menu_order		= 1;
+		if ( ! is_array( $news ) || 1 > count( $news ) || $news['itemid'] != $this->news_uid )
+			die( json_encode( array( 'error' => sprintf( __( "Failed import: %s isn't a TYPO3 news record.", 'typo3-importer' ), esc_html( $_REQUEST['id'] ) ) ) ) );
 
 		// TODO progress by post
 
-		// TODO process post
+		// process and import news post
+		$post_id 				= $this->import_news_as_post( $news );
 
-		// process [flickr] codes in posts
-		$post_content			= do_shortcode( $post->post_content );
+		$this->featured_image_id	= false;
 
-		// allow overriding Featured Image
-		if ( $this->featured_id
-			&& t3i_options( 'set_featured_image' )
-			&& ( ! has_post_thumbnail( $this->post_id ) || t3i_options( 'force_set_featured_image' ) ) ) {
-			$updated			= update_post_meta( $this->post_id, "_thumbnail_id", $this->featured_id );
+		// replace original external images with internal
+		$this->_typo3_replace_images( $post_id );
+
+		// Handle all the metadata for this post
+		$this->insert_postmeta( $post_id, $news );
+
+		if ( get_t3i_options( 'set_featured_image' ) && $this->featured_image_id ) {
+			update_post_meta( $post_id, "_thumbnail_id", $this->featured_image_id );
+		}
+
+		if ( ! get_t3i_options( 'no_comments_import' ) ) {
+			// TODO import comments
+		}
+
+		die( json_encode( array( 'success' => sprintf( __( '&quot;<a href="%1$s" target="_blank">%2$s</a>&quot; Post ID %3$s was successfully processed in %4$s seconds.', 'typo3-importer' ), get_permalink( $post_id ), esc_html( get_the_title( $post_id ) ), $post_id, timer_stop() ) ) ) );
+	}
+
+	function import_news_as_post( $news ) {
+		// lookup or create author for posts, but not comments
+		$post_author      		= $this->lookup_author( $news['props']['author_email'], $news['props']['author'] );
+
+		if ( in_array( $news['status'], $this->post_status_options ) ) {
+			$post_status		= $news['status'];
+		} else {
+			$post_status		= 'draft';
+		}
+
+		// leave draft's alone to prevent publishing something that had been hidden on TYPO3
+		$force_post_status		= get_t3i_options( 'force_post_status' );
+		if ( 'default' != $force_post_status && 'draft' != $post_status ) {
+			$post_status      	= $force_post_status;
+		}
+
+		$post_password    		= get_t3i_options( 'protected_password' );
+		$post_category			= $news['category'];
+		$post_date				= $news['datetime'];
+
+		// Cleaning up and linking the title
+		$post_title				= isset( $news['title'] ) ? $news['title'] : '';
+		$post_title				= strip_tags( $post_title ); // Can't have tags in the title in WP
+		$post_title				= trim( $post_title );
+
+		// Clean up content
+		// TYPO3 stores bodytext usually in psuedo HTML
+		$post_content			= $this->_prepare_content( $news['bodytext'] );
+
+		// Handle any tags associated with the post
+		$tags_input				= ! empty( $news['props']['keywords'] ) ? $news['props']['keywords'] : '';
+
+		// Check if comments are closed on this post
+		$comment_status			= $news['props']['comments'];
+
+		// Add excerpt
+		$post_excerpt			= ! empty( $news['props']['excerpt'] ) ? $news['props']['excerpt'] : '';
+
+		// add slug AKA url
+		$post_name				= $news['props']['slug'];
+
+		$post_id				= post_exists( $post_title, $post_content, $post_date );
+		if ( ! $post_id ) {
+			$postdata			= compact( 'post_author', 'post_date', 'post_content', 'post_title', 'post_status', 'post_password', 'tags_input', 'comment_status', 'post_excerpt', 'post_category', 'post_name' );
+			// @ref http://codex.wordpress.org/Function_Reference/wp_insert_post
+			$post_id			= wp_insert_post( $postdata, true );
+
+			if ( is_wp_error( $post_id ) ) {
+				if ( 'empty_content' == $post_id->getErrorCode() )
+					return; // Silent skip on "empty" posts
+			}
+		}
+
+		return $post_id;
+	}
+
+	function insert_postmeta( $post_id, $post ) {
+		// Need the original TYPO3 id for comments
+		add_post_meta( $post_id, 't3:tt_news.uid', $post['itemid'] );
+
+		foreach ( $post['props'] as $prop => $value ) {
+			if ( ! empty( $post['props'][$prop] ) ) {
+				$add_post_meta	= false;
+
+				switch ( $prop ) {
+					case 'slug':
+						// save the permalink on TYPO3 in case we want to link back or something
+						add_post_meta( $post_id, 't3:tt_news.url', $value );
+						break;
+
+					case 'excerpt':
+						// TODO figure out other SEO packages
+						add_post_meta( $post_id, 'thesis_description', $value );
+						break;
+
+					case 'keywords':
+						// TODO figure out other SEO packages
+						add_post_meta( $post_id, 'thesis_keywords', $value );
+						break;
+
+					case 'image':
+						$this->insert_postimages( $post_id, $value, $post['props']['imagecaption'] );
+						break;
+
+					case 'imagecaption':
+						// TODO apply imagecaption to related image
+						break;
+
+					case 'news_files':
+						$this->_typo3_append_files( $post_id, $value );
+						break;
+
+					case 'links':
+						// not possible to do blogroll link inserts, so format and append
+						$this->_typo3_append_links( $post_id, $value );
+						break;
+
+					default:
+						$add_post_meta	= true;
+						break;
+				}
+
+				if ( $add_post_meta ) {
+					add_post_meta( $post_id, 't3:tt_news.' . $prop, $value );
+				}
+			}
+		}
+	}
+
+	function _typo3_append_links( $post_id, $links ) {
+		$post					= get_post( $post_id );
+		$post_content			= $post->post_content;
+
+		// create header
+		$tag					= get_t3i_options( 'related_links_header_tag' );
+		$new_content			= ( $tag ) ? '<h' . $tag . '>' : '';
+		$new_content			.= __(  get_t3i_options( 'related_links_header' ), 'typo3-importer');
+		$new_content			.= ( $tag ) ? '</h' . $tag . '>' : '';
+
+		$wrap					= get_t3i_options( 'related_links_wrap' );
+		$wrap					= explode( '|', $wrap );
+		$new_content			.= ( isset( $wrap[0] ) ) ? $wrap[0] : '';
+		$new_content			.= '<ul>';
+
+		// then create ul/li list of links
+		// link title is either link base or some title text
+		$links					= $this->_typo3_api_parse_typolinks( $links );
+		$links_arr				= explode( $this->newline_typo3, $links );
+
+		foreach ( $links_arr as $link ) {
+			$new_content		.= '<li>';
+
+			// normally links processed by _typo3_api_parse_typolinks
+			if ( ! preg_match( '#^http#i', $link ) ) {
+				$new_content	.= $link;
+			} else {
+				$new_content	.= '<a href="' . $link . '">' . $link . '</a>';
+			}
+			$new_content		.= '</li>';
+		}
+
+		$new_content			.= '</ul>';
+		$new_content			.= ( isset( $wrap[1] ) ) ? $wrap[1] : '';
+		$post_content			.= $new_content;
+
+		$post					= array(
+			'ID'			=> $post_id,
+			'post_content'	=> $post_content
+		);
+	 
+		wp_update_post( $post );
+	}
+
+	function _typo3_append_files($post_id, $files) {
+		if ( $this->no_media_import )
+			return;
+
+		$post					= get_post( $post_id );
+		$post_content			= $post->post_content;
+
+		// create header
+		$tag					= get_t3i_options( 'related_files_header_tag' );
+		$new_content			= ( $tag ) ? '<h' . $tag . '>' : '';
+		$new_content			.= __(  get_t3i_options( 'related_files_header' ), 'typo3-importer');
+		$new_content			.= ( $tag ) ? '</h' . $tag . '>' : '';
+
+		$wrap					= get_t3i_options( 'related_files_wrap' );
+		$wrap					= explode( '|', $wrap );
+		$new_content			.= ( isset( $wrap[0] ) ) ? $wrap[0] : '';
+
+		// then create ul/li list of links
+		$new_content			.= '<ul>';
+
+		$files_arr				= explode( ",", $files );
+		$uploads_dir_typo3		= $this->typo3_url . 'uploads/';
+
+		foreach ( $files_arr as $key => $file ) {
+			$original_file_uri	= $uploads_dir_typo3 . 'media/' . $file;
+			$file_move			= wp_upload_bits($file, null, file_get_contents($original_file_uri));
+			$filename			= $file_move['file'];
+			$title				= sanitize_title_with_dashes($file);
+
+			$wp_filetype		= wp_check_filetype($file, null);
+			$attachment			= array(
+				'post_content'		=> '',
+				'post_mime_type'	=> $wp_filetype['type'],
+				'post_status'		=> 'inherit',
+				'post_title'		=> $title,
+			);
+			$attach_id			= wp_insert_attachment( $attachment, $filename, $post_id );
+			$attach_data		= wp_generate_attachment_metadata( $attach_id, $filename );
+			wp_update_attachment_metadata( $attach_id, $attach_data );
+			$attach_src			= wp_get_attachment_url( $attach_id );
+
+			// link title is either link base or some title text
+			$new_content		.= '<li>';
+			$new_content		.= '<a href="' . $attach_src . '" title="' . $title . '">' . $title . '</a>';
+			$new_content		.= '</li>';
+		}
+
+		$new_content			.= '</ul>';
+		$new_content			.= ( isset( $wrap[1] ) ) ? $wrap[1] : '';
+		$post_content			.= $new_content;
+
+		$post					= array(
+			'ID'			=> $post_id,
+			'post_content'	=> $post_content
+		);
+	 
+		wp_update_post( $post );
+	}
+
+	// check for images in post_content
+	function _typo3_replace_images( $post_id ) {
+		if ( $this->no_media_import )
+			return;
+
+		$post					= get_post( $post_id );
+		$post_content			= $post->post_content;
+
+		if ( ! stristr( $post_content, '<img' ) ) {
+			return;
+		}
+
+		// pull images out of post_content
+		$doc					= new DOMDocument();
+		if ( ! $doc->loadHTML( $post_content ) ) {
+			return;
+		}
+
+		// grab img tag, src, title
+		$image_tags				= $doc->getElementsByTagName('img');
+
+		foreach ( $image_tags as $image ) {
+			$src				= $image->getAttribute('src');
+			$title				= $image->getAttribute('title');
+			$alt				= $image->getAttribute('alt');
+
+			// check that src is locally referenced to post 
+			if ( preg_match( '#^(https?://[^/]+/)#i', $src, $matches ) ) {
+				if ( $matches[0] != $this->typo3_url ) {
+					// external src, ignore importing
+					continue;
+				} else {
+					// TODO handle http/https alternatives
+					// internal src, prep for importing
+					$src		= str_ireplace( $this->typo3_url, '', $src );
+				}
+			}
+
+			// TODO config caption for own, title, alt or none
+			// try to figure out longest amount of the caption to keep
+			// push src, title to like images, captions arrays
+			if ( $title == $alt 
+				|| strlen( $title ) > strlen( $alt ) ) {
+				$caption	= $title;
+			} elseif ( $alt ) {
+				$caption	= $alt;
+			} else {
+				$caption	= '';
+			}
+
+			$file				= basename( $src );
+			$original_file_uri	= $this->typo3_url . $src;
+			$file_move			= wp_upload_bits($file, null, file_get_contents($original_file_uri));
+			$filename			= $file_move['file'];
+
+			$title				= $caption ? $caption : sanitize_title_with_dashes($file);
+
+			$wp_filetype		= wp_check_filetype($file, null);
+			$attachment			= array(
+				'post_content'		=> '',
+				'post_excerpt'		=> $caption,
+				'post_mime_type'	=> $wp_filetype['type'],
+				'post_status'		=> 'inherit',
+				'post_title'		=> $title,
+			);
+			$attach_id			= wp_insert_attachment( $attachment, $filename, $post_id );
+
+			if ( ! $this->featured_image_id ) {
+				$this->featured_image_id	= $attach_id;
+			}
+
+			$attach_data		= wp_generate_attachment_metadata( $attach_id, $filename );
+			wp_update_attachment_metadata( $attach_id, $attach_data );
+			$attach_src			= wp_get_attachment_url( $attach_id );
+
+			// then replace old image src with new in post_content
+			$post_content		= str_ireplace( $src, $attach_src, $post_content );
 		}
 
 		$post					= array(
-			'ID'			=> $this->post_id,
-			'post_content'	=> $post_content,
+			'ID'			=> $post_id,
+			'post_content'	=> $post_content
 		);
-
+	 
 		wp_update_post( $post );
-
-		die( json_encode( array( 'success' => sprintf( __( '&quot;<a href="%1$s" target="_blank">%2$s</a>&quot; Post ID %3$s was successfully processed in %4$s seconds.', 'typo3-importer' ), get_permalink( $this->post_id ), esc_html( get_the_title( $this->post_id ) ), $this->post_id, timer_stop() ) ) ) );
 	}
 
-	
-	// process each [flickr] entry
-	function shortcode_flickr( $args ) {
-		set_time_limit( 120 );
+	function insert_postimages($post_id, $images, $captions) {
+		if ( $this->no_media_import )
+			return;
 
-		$photo					= $this->flickr->photos_getInfo( $args['id'] );
-		$photo					= $photo['photo'];
+		$post					= get_post( $post_id );
+		$post_content			= $post->post_content;
 
-		if ( isset( $args['set_title'] ) ) {
-			$photo['set_title']	= $args['set_title'];
-		} else {
-			$contexts			= $this->flickr->photos_getAllContexts( $args['id'] );
-			$photo['set_title']	= isset( $contexts['set'][0]['title'] ) ? $contexts['set'][0]['title'] : '';
-		}
-		
-		$markup					= $this->process_flickr_media( $photo, $args );
-		
-		return $markup;
-	}
+		// images is a CSV string, convert images to array
+		$images					= explode( ",", $images );
+		$image_count			= count( $images );
+		$captions				= explode( "\n", $captions );
+		$uploads_dir_typo3		= $this->typo3_url . 'uploads/';
 
-	
-	// process each [flickrset] entry
-	function shortcode_flickrset( $args ) {
-		$this->in_flickset		= true;
-		$import_limit			= ( $args['photos'] ) ? $args['photos'] : -1;
+		// cycle through to create new post attachments
+		foreach ( $images as $key => $file ) {
+			// cp image from A to B
+			// @ref http://codex.wordpress.org/Function_Reference/wp_upload_bits
+			// $upload = wp_upload_bits($_FILES["field1"]["name"], null, file_get_contents($_FILES["field1"]["tmp_name"]));
+			$original_file_uri	= $uploads_dir_typo3 . 'pics/' . $file;
+			$file_move			= wp_upload_bits($file, null, file_get_contents($original_file_uri));
+			$filename			= $file_move['file'];
 
-		$info					= $this->flickr->photosets_getInfo( $args['id'] );
-		$args['set_title']		= $info['title'];
+			// @ref http://codex.wordpress.org/Function_Reference/wp_insert_attachment
+			$caption			= isset($captions[$key]) ? $captions[$key] : '';
+			// TODO nice title from file name if possible
+			$title				= $caption ? $caption : sanitize_title_with_dashes($file);
 
-		$photos					= $this->flickr->photosets_getPhotos( $args['id'] );
-		$photos					= $photos['photoset']['photo'];
+			$wp_filetype		= wp_check_filetype($file, null);
+			$attachment			= array(
+				'post_content'		=> '',
+				'post_excerpt'		=> $caption,
+				'post_mime_type'	=> $wp_filetype['type'],
+				'post_status'		=> 'inherit',
+				'post_title'		=> $title,
+			);
+			$attach_id			= wp_insert_attachment( $attachment, $filename, $post_id );
 
-		// increased because [flickrset] might have lots of photos
-		set_time_limit( 120 * count( $photos ) );
-		
-		foreach( $photos as $entry ) {
-			$args['id']			= $entry['id'];
-			$this->shortcode_flickr( $args );
-
-			if ( 0 == --$import_limit )
-				break;
-		}
-		
-		$markup					= '[gallery]';
-		$this->in_flickset		= false;
-
-		return $markup;
-	}
-
-
-	function process_flickr_media( $photo, $args = false ) {
-		$markup					= '';
-
-		if ( 'photo' == $photo['media'] ) {
-			// pull original Flickr image
-			$src				= $this->flickr->buildPhotoURL( $photo, 'original' );
-			// add image to media library
-			$image_id			= $this->import_flickr_media( $src, $photo );
-
-			// if first image, set as featured 
-			if ( ! $this->featured_id ) {
-				$this->featured_id	= $image_id;
+			if ( ! $this->featured_image_id ) {
+				$this->featured_image_id	= $attach_id;
 			}
 
-			// no args, means nothing further to do
-			if ( false === $args )
-				return $markup;
+			$attach_data		= wp_generate_attachment_metadata( $attach_id, $filename );
+			wp_update_attachment_metadata( $attach_id, $attach_data );
+		}
 
-			// wrap in link to attachment itself
-			$size				= isset( $args['thumbnail'] ) ? $args['thumbnail'] : '';
-			$size				= $this->get_shortcode_size( $size );
-			$image_link			= wp_get_attachment_link( $image_id, $size, true 	);
 
-			// correct class per args
-			$align				= isset( $args['align'] ) ? $args['align'] : t3i_options( 'default_image_alignment' );
-			$align				= ' align' . $align;
-			$wp_image			= ' wp-image-' . $image_id;
-			$image_link			= preg_replace( '#(class="[^"]+)"#', '\1'
-				. $align
-				. $wp_image
-				. '"', $image_link );
+		// insert [gallery] into content after the second paragraph
+		$post_content_array		= explode( $this->newline_wp, $post_content );
+		$post_content_arr_size	= sizeof( $post_content_array );
+		$new_post_content		= '';
+		$gallery_code			= '[gallery]';
+		$gallery_inserted		= false;
 
-			$class				= t3i_options( 'default_a_tag_class' );
-			if ( $class ) {
-				$image_link		= preg_replace(
-					'#(<a )#',
-					'\1class="' . $class . '" ',
-					$image_link );
-			}
+		// don't give single image galleries
+		if ( 1 == $image_count && get_t3i_options( 'set_featured_image' ) ) {
+			$gallery_code			= '';
+		}
 
-			if ( ! $this->first_image ) {
-				// remaining [flickr] converted to locally reference image
-				$markup			= $image_link;
+		$insert_gallery_shortcut	= get_t3i_options( 'insert_gallery_shortcut' );
+
+		// TODO prevent inserting gallery into pre/code sections
+		for ( $i = 0; $i < $post_content_arr_size; $i++ ) {
+			if ( $insert_gallery_shortcut != $i ) {
+				$new_post_content	.= $post_content_array[$i] . "{$this->newline_wp}";
 			} else {
-				// remove [flickr] from post
-				$this->first_image	= false;
+				if ( $insert_gallery_shortcut != 0 && $insert_gallery_shortcut == $i ) {
+					$new_post_content	.= "{$gallery_code}{$this->newline_wp}";
+					$gallery_inserted	= true;
+				}
+
+				$new_post_content	.= $post_content_array[$i] . "{$this->newline_wp}";
 			}
 		}
 
-		return $markup;
-	}
-	
-
-	// correct none thumbnail, medium, large or full size values
-	function get_shortcode_size( $size_name = '' ) {
-		$find_size				= '#(square|thumbnail|small|medium|large|original|full)#i';
-		preg_match_all( $find_size, $size_name, $size_matches );
-		// get the last size mentioned since that has precedence
-		$size_name				= ( isset( $size_matches[0] ) ) ? array_pop( $size_matches[0] ) : '';
-
-		switch ( strtolower( $size_name ) ) {
-			case 'square':
-			case 'thumbnail':
-			case 'small':
-				$size			= 'thumbnail';
-				break;
-
-			case 'medium':
-			case 'medium_640':
-				$size			= 'medium';
-				break;
-
-			case 'large':
-				$size			= 'large';
-				break;
-
-			case 'original':
-			case 'full':
-				$size			= 'full';
-				break;
-
-			default:
-				$size			= t3i_options( 'default_image_size' );
-				break;
+		if ( ! $gallery_inserted && 0 != $insert_gallery_shortcut ) {
+			$new_post_content	.= $gallery_code;
 		}
-
-		return $size;
+		
+		$post					= array(
+			'ID'			=> $post_id,
+			'post_content'	=> $new_post_content
+		);
+	 
+		wp_update_post( $post );
 	}
-	
 
-	function import_flickr_media( $src, $photo ) {
-		global $wpdb;
+	// Clean up content
+	function _prepare_content( $content ) {
+		// convert LINK tags to A
+		$content				= $this->_typo3_api_parse_typolinks($content);
+		// remove broken link spans
+		$content				= $this->_typo3_api_parse_link_spans($content);
+		// clean up code samples
+		$content				= $this->_typo3_api_parse_pre_code($content);
+		// return carriage and newline used as line breaks, consolidate
+		$content				= str_replace($this->newline_typo3, $this->newline_wp, $content);
+		// lowercase closing tags
+		$content				= preg_replace_callback( '|<(/?[A-Z]+)|', array( &$this, '_normalize_tag' ), $content );
+		// XHTMLize some tags
+		$content				= str_replace( '<br>', '<br />', $content );
+		$content				= str_replace( '<hr>', '<hr />', $content );
 
-		$set_title			= isset( $photo['set_title'] ) ? $photo['set_title'] : '';
-		$title				= $photo['title'];
+		// process read more linking
+		$morelink_code			= '<!--more-->';
+		
+		// t3-cut ==>  <!--more-->
+		$content				= preg_replace( '#<t3-cut text="([^"]*)">#is', $morelink_code, $content );
+		$content				= str_replace( array( '<t3-cut>', '</t3-cut>' ), array( $morelink_code, '' ), $content );
 
-		if ( t3i_options( 'make_nice_image_title' ) ) {
-			// if title is a filename, use set_title - menu order instead
-			if ( ( preg_match( '#\.[a-zA-Z]{3}$#', $title ) 
-			   	|| preg_match( '#^DSCF\d+#', $title ) )
-				&& ! empty( $set_title ) ) {
-				$title			= $set_title . ' - ' . $this->menu_order;
-			} elseif ( ! preg_match( '#\s#', $title ) ) {
-				$title		= $this->cbMkReadableStr( $title );
-			}
-		}
+		$post_content_array		= explode( $this->newline_wp, $content );
+		$post_content_arr_size	= sizeof( $post_content_array );
+		$new_post_content		= '';
 
-		$alt				= $title;
-		$caption			= t3i_options( 'set_caption' ) ? $title : '';
-		$desc				= html_entity_decode( $photo['description'] );
-		$date				= $photo['dates']['taken'];
-		$file				= basename( $src );
+		$insert_more_link			= get_t3i_options( 'insert_more_link' );
 
-		// see if src is duplicate, if so return image_id
-		$query				= "
-			SELECT m.post_id
-			FROM $wpdb->postmeta m
-			WHERE 1 = 1
-				AND m.meta_key LIKE '_flickr_src'
-				AND m.meta_value LIKE '$src'
-		";
-		$dup				= $wpdb->get_var( $query );
-
-		if ( $dup ) {
-			// ignore dup if importing [flickrset]
-			if( ! $this->in_flickset ) {
-				return $dup;
+		for ( $i = 0; $i < $post_content_arr_size; $i++ ) {
+			if ( $insert_more_link != $i ) {
+				$new_post_content	.= $post_content_array[$i] . "{$this->newline_wp}";
 			} else {
-				// use local source to speed up transfer
-				$src		= wp_get_attachment_url( $dup );
+				if ( $insert_more_link != 0 && $insert_more_link == $i ) {
+					$new_post_content	.= "{$morelink_code}{$this->newline_wp}";
+				}
+
+				$new_post_content	.= $post_content_array[$i] . "{$this->newline_wp}";
 			}
 		}
 
-		$file_move			= wp_upload_bits( $file, null, file_get_contents( $src ) );
-		$filename			= $file_move['file'];
+		// database prepping
+		$content				= trim( $new_post_content );
+	
+		return $content;
+	}
 
-		$wp_filetype		= wp_check_filetype( $file, null );
-		$attachment			= array(
-			'menu_order'		=> $this->menu_order++,
-			'post_content'		=> $desc,
-			'post_date'			=> $date,
-			'post_excerpt'		=> $caption,
-			'post_mime_type'	=> $wp_filetype['type'],
-			'post_status'		=> 'inherit',
-			'post_title'		=> $title,
+	function lookup_author( $author_email, $author ) {
+		// TODO verify ideas for unique emails work
+		$username				= $this->_create_username( $author );
+
+		// create unique emails for no email authors
+		if ( '' == $author_email ) {
+			$author_email		= $username . '@' . preg_replace( '#https?://#', $this->typo3_url, '' );
+		}
+
+		$post_author      		= email_exists( $author_email );
+
+		if ( $post_author )
+			return $post_author;
+
+		$url					= preg_replace( '#^[^@]+@#', 'http://', $author_email );
+
+		$password				= wp_generate_password();
+		$first					= array_shift( $author_arr );
+		$last					= implode( ' ', $author_arr );
+
+		$user					= array(
+			'user_login'		=> $username,
+			'user_email'		=> $author_email,
+			'user_url'			=> $url,
+			'display_name'		=> $author,
+			'user_pass'			=> $password,
+			'first_name'		=> $first,
+			'last_name'			=> $last,
+			'role'				=> 'author',
 		);
 
-		// relate image to post
-		$image_id			= wp_insert_attachment( $attachment, $filename, $this->post_id );
+		$post_author      		= wp_insert_user( $user );
 
-		if ( ! $image_id )
-			$this->die_json_error_msg( $this->post_id, sprintf( __( 'The originally uploaded image file cannot be found at %s', 'typo3-importer' ), '<code>' . esc_html( $filename ) . '</code>' ) );
-
-		$metadata				= wp_generate_attachment_metadata( $image_id, $filename );
-
-		if ( is_wp_error( $metadata ) )
-			$this->die_json_error_msg( $this->post_id, $metadata->get_error_message() );
-
-		if ( empty( $metadata ) )
-			$this->die_json_error_msg( $this->post_id, __( 'Unknown failure reason.', 'typo3-importer' ) );
-
-		// If this fails, then it just means that nothing was changed (old value == new value)
-		wp_update_attachment_metadata( $image_id, $metadata );
-		update_post_meta( $image_id, '_wp_attachment_image_alt', $alt );
-		// help keep track of what's been imported already
-		update_post_meta( $image_id, '_flickr_src', $src );
-
-		return $image_id;
+		if ( $post_author ) {
+			return $post_author;
+		} else {
+			false;
+		}
 	}
 
+	function _create_username( $author ) {
+		$author					= strtolower( $author );
+		$author_arr				= explode( ' ', $author );
+		$username_arr			= array();
+
+		foreach ( $author_arr as $key => $value ) {
+			// remove all non word characters
+			// TODO see if exploding array is really necessary
+			$value				= preg_replace( '#\W#', '', $value );
+			$username_arr[]		= $value;
+		}
+		$username				= implode( '.', $username_arr );
+
+		$username_orig			= $username;
+		$offset					= 1;
+		while ( username_exists( $username ) ) {
+			$username			= $username_orig . '.' . $offset;
+			$offset++;
+		}
+
+		return $username;
+	}
+
+	function get_news( $uid = null ) {
+		if ( is_null( $uid ) ) {
+			$uid				= $this->news_uid;
+		}
+
+		$query				= "
+			SELECT n.uid itemid,
+				CASE
+					WHEN n.hidden = 1 THEN 'draft'
+					WHEN n.datetime > UNIX_TIMESTAMP() THEN 'future'
+					ELSE 'publish'
+					END status,
+				FROM_UNIXTIME(n.datetime) datetime,
+				n.title,
+				n.bodytext,
+				n.keywords,
+				n.short excerpt,
+				'open' comments,
+				n.author,
+				n.author_email,
+				n.category,
+				n.image,
+				n.imagecaption,
+				n.news_files,
+				n.links
+			FROM tt_news n
+			WHERE 1 = 1
+				AND uid = {$uid}
+		";
+
+		$row					= $this->t3db->get_row($query, ARRAY_A);
+
+		$row['props']['datetime']		= $row['datetime'];
+
+		$row['props']['keywords']		= $row['keywords'];
+		unset($row['keywords']);
+
+		$row['props']['comments']		= $row['comments'];
+		unset($row['comments']);
+
+		$row['props']['excerpt']		= $row['excerpt'];
+		unset($row['excerpt']);
+
+		$row['props']['author']			= $row['author'];
+		unset($row['author']);
+
+		$row['props']['author_email']	= $row['author_email'];
+		unset($row['author_email']);
+
+		$row['props']['image']			= $row['image'];
+		unset($row['image']);
+
+		$row['props']['imagecaption']	= $row['imagecaption'];
+		unset($row['imagecaption']);
+
+		$row['props']['news_files']		= $row['news_files'];
+		unset($row['news_files']);
+
+		$row['props']['links']			= $row['links'];
+		unset($row['links']);
+
+		$row['props']['slug']			= $this->_typo3_api_news_slug($row['itemid']);
+
+		// Link each category to this post
+		$catids				= $this->_typo3_api_news_categories($row['itemid']);
+		$category_arr		= array();
+		foreach ($catids as $cat_name) {
+			// typo3 tt_news_cat => wp category taxomony
+			$category_arr[]	= wp_create_category($cat_name);
+		}
+
+		$row['category']		= $category_arr;
+
+		return $row;
+	}
+
+	// remove TYPO3's broken link span code
+	function _typo3_api_parse_link_spans($bodytext) {
+		$parsehtml = t3lib_div::makeInstance('t3lib_parsehtml');
+		$span_tags = $parsehtml->splitTags('span', $bodytext);
+
+		foreach($span_tags as $k => $found_value)	{
+			if ($k%2) {
+				$span_value = preg_replace('/<span[[:space:]]+/i','',substr($found_value,0,-1));
+
+				// remove the red border, yellow backgroun broken link code
+				if ( preg_match( '#border: 2px solid red#i', $span_value ) ) {
+					$span_tags[$k] = '';
+					$span_value = str_ireplace('</span>', '', $span_tags[$k+1]);
+					$span_tags[$k+1] = $span_value;
+				}
+			}
+		}
+
+		return implode( '', $span_tags );
+	}
+
+	// include t3lib_div, t3lib_softrefproc
+	// look for getTypoLinkParts to parse out LINK tags into array
+	function _typo3_api_parse_typolinks( $bodytext ) {
+		$softrefproc = t3lib_div::makeInstance('t3lib_softrefproc');
+		$parsehtml = t3lib_div::makeInstance('t3lib_parsehtml');
+
+		$link_tags = $parsehtml->splitTags('link', $bodytext);
+
+		foreach($link_tags as $k => $found_value)	{
+			if ($k%2) {
+				$typolink_value = preg_replace('/<LINK[[:space:]]+/i','',substr($found_value,0,-1));
+				$t_lP = $softrefproc->getTypoLinkParts($typolink_value);
+
+				switch ( $t_lP['LINK_TYPE'] ) {
+					case 'mailto':
+						// internal page link, drop link
+						$link_tags[$k] = '<a href="mailto:' . $t_lP['url'] . '" target="_blank">';
+						$typolink_value = str_ireplace('</link>', '</a>', $link_tags[$k+1]);
+						$link_tags[$k+1] = $typolink_value;
+						break;
+
+					case 'url':
+						// internal page link, drop link
+						$link_tags[$k] = '<a href="' . $t_lP['url'] . '">';
+						$typolink_value = str_ireplace('</link>', '</a>', $link_tags[$k+1]);
+						$link_tags[$k+1] = $typolink_value;
+						break;
+
+					// TODO? pull file into post
+					case 'file':
+					case 'page':
+					default:
+						// internal page link, drop link
+						$link_tags[$k] = '';
+						$typolink_value = str_ireplace('</link>', '', $link_tags[$k+1]);
+						$link_tags[$k+1] = $typolink_value;
+						break;
+				}
+			}
+		}
+
+		$return_links			= implode( '', $link_tags );
+		return $return_links;
+	}
+
+	// remove <br /> from pre code and replace withnew lines
+	function _typo3_api_parse_pre_code($bodytext) {
+		$parsehtml				= t3lib_div::makeInstance('t3lib_parsehtml');
+		$pre_tags				= $parsehtml->splitTags('pre', $bodytext);
+
+		// silly fix for editor color code parsing
+		$match					= '#<br\s?/?'.'>#i';
+		foreach($pre_tags as $k => $found_value)	{
+			if ( 0 == $k%2 ) {
+				$pre_value = preg_replace($match, "\n", $found_value);
+				$pre_tags[$k]	= $pre_value;
+			}
+		}
+
+		return implode( '', $pre_tags );
+	}
+
+	function _typo3_api_news_slug( $uid ) {
+		$query_items				= "
+			SELECT a.value_alias slug
+			FROM tx_realurl_uniqalias a
+			WHERE a.tablename = 'tt_news'
+				AND a.value_id = {$uid}
+			ORDER BY a.tstamp DESC
+			LIMIT 1
+		";
+
+		$url					= $this->t3db->get_var( $query_items );
+
+		return $url;
+	}
+
+	/*
+	 * @param	integer	tt_news id to lookup
+	 * @return	array	names of tt_news categories
+	 */
+	function _typo3_api_news_categories($uid) {
+		$sql					= sprintf("
+			SELECT c.title
+			FROM tt_news_cat c
+				LEFT JOIN tt_news_cat_mm m ON c.uid = m.uid_foreign
+			WHERE m.uid_local = %s
+		", $uid);
+
+		$results				= $this->t3db->get_results($sql);
+
+		$cats					= array();
+
+		foreach( $results as $cat ) {
+			$cats[]				= $cat->title;
+		}
+
+		return $cats;
+	}
 
 	// Helper to make a JSON error message
 	function die_json_error_msg( $id, $message ) {

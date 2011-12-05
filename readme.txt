@@ -49,6 +49,9 @@ Yes. Any sponsoring would be greatly welcome. Please [donate](http://typo3vagabo
 * Disallow single image galleries
 * Migrate importing to one-at-a-time model
 * Separate import and option screens
+* Configure related files and links header text, tag and wrapper
+* Enable custom news WHERE & ORDER clause
+* Enable specific news uid import/skip
 -
 
 = 1.0.2 =
