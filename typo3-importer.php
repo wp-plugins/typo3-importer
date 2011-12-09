@@ -983,6 +983,7 @@ EOD;
 	}
 
 	function lookup_author( $author_email, $author ) {
+		// TODO have default author, author_email for empty
 		// TODO verify ideas for unique emails work
 		$username				= $this->_create_username( $author );
 

@@ -341,12 +341,12 @@ EOD;
 		
 		$this->settings['force_post_status'] = array(
 			'section' => 'general',
-			'title'   => __( 'Set Post Status as...?', 'typo3-importer'),
-			'desc'    => __( 'Overrides incoming news record status. However, hidden news records will remain as Draft.', 'typo3-importer'),
+			'title'   => __( 'Override Post Status as...?', 'typo3-importer'),
+			'desc'    => __( 'Hidden news records will remain as Draft.', 'typo3-importer'),
 			'type'    => 'radio',
 			'std'     => 'default',
 			'choices' => array(
-				'default'	=> 'Default',
+				'default'	=> 'No Change',
 				'draft'		=> 'Draft',
 				'publish'	=> 'Publish',
 				'pending'	=> 'Pending',
@@ -505,8 +505,8 @@ EOD;
 			'std'     => 0
 		);
 		
-		$desc_imports		= __( "This will remove ALL post imports with the 't3:tt_news.uid' meta key. Related post media and comments will also be deleted.", 'typo3-importer');
-		$desc_comments		= __( "This will remove ALL comments imports with the 't3:tx_comments' comment_agent key." , 'typo3-importer');
+		$desc_imports		= __( "This will remove ALL posts imported with the 't3:tt_news.uid' meta key. Related post media and comments will also be deleted.", 'typo3-importer');
+		$desc_comments		= __( "This will remove ALL comments imported with the 't3:tx_comments' comment_agent key." , 'typo3-importer');
 		$desc_attachments	= __( "This will remove ALL media without a related post. It's possible for non-imported media to be deleted.", 'typo3-importer');
 
 		// Reset/restore
@@ -701,6 +701,10 @@ EOD;
 		// CSV of posts_to_import, skip_importing_post_ids
 		// valid TYPO3 url
 		// db connectivity
+		
+		if ( '' == $input['typo3_url'] ) {
+			add_settings_error( __( 'Website URL', 'typo3-importer'), 'typo3_url', __('TYPO3 website URL is required', 'typo3-importer') );
+		}
 
 		if ( isset( $input['delete'] ) && $input['delete'] ) {
 			switch ( $input['delete'] ) {
@@ -758,12 +762,7 @@ EOD;
 			$comment_count++;
 		}
 
-		// TODO return message
-		/*
-		echo '<h3>' . __( 'Comments Deleted', 'typo3-importer') . '</h3>';
-		echo '<p>' . sprintf( __( "Successfully removed %s comments." , 'typo3-importer'), number_format( $comment_count ) ) . '</p>';
-		echo '<hr />';
-		*/
+		add_settings_error( __( 'Comments Deleted', 'typo3-importer'), 'comments', sprintf( __( "Successfully removed %s comments." , 'typo3-importer'), number_format( $comment_count ) ), 'updated' );
 	}
 
 	function force_private_posts() {
@@ -790,12 +789,10 @@ EOD;
 			$post_count++;
 		}
 
-		// TODO report message
-		/*
-		echo '<h3>' . __( 'Prior Imports Forced to Private Status', 'typo3-importer') . '</h3>';
-		echo '<p>' . sprintf( __( "Successfully updated %s TYPO3 news imports to 'Private'." , 'typo3-importer'), number_format( $post_count ) ) . '</p>';
-		echo '<hr />';
-		*/
+		if ( $post_count )
+			add_settings_error( __( 'Prior Imports Forced to Private Status', 'typo3-importer'), 'force_private_posts', sprintf( __( "Successfully updated %s TYPO3 news imports to 'Private'." , 'typo3-importer'), number_format( $post_count ) ), 'updated' );
+		else
+			add_settings_error( __( 'Prior Imports Forced to Private Status', 'typo3-importer'), 'force_private_posts', __( "No TYPO3 news imports found to mark as 'Private'." , 'typo3-importer'), 'updated' );
 	}
 
 	function delete_import() {
@@ -810,7 +807,7 @@ EOD;
 			$post_id			= $post->post_id;
 
 			// remove media relationships
-			$this->delete_attachments( $post_id );
+			$this->delete_attachments( $post_id, false );
 
 			// dels post, meta & comments
 			// true is force delete
@@ -819,15 +816,10 @@ EOD;
 			$post_count++;
 		}
 
-		// TODO pass success message
-		/*
-		echo '<h3>' . __( 'Prior Imports Deleted', 'typo3-importer') . '</h3>';
-		echo '<p>' . sprintf( __( "Successfully removed %s TYPO3 news and their related media and comments." , 'typo3-importer'), number_format( $post_count ) ) . '</p>';
-		echo '<hr />';
-		*/
+		add_settings_error( __( 'Prior Imports Deleted', 'typo3-importer'), 'imports', sprintf( __( "Successfully removed %s TYPO3 news and their related media and comments." , 'typo3-importer'), number_format( $post_count ) ), 'updated' );
 	}
 
-	function delete_attachments( $post_id = false ) {
+	function delete_attachments( $post_id = false, $report = true ) {
 		$post_id				= $post_id ? $post_id : 0;
 		$query					= "SELECT ID FROM {$this->wpdb->posts} WHERE post_type = 'attachment' AND post_parent = {$post_id}";
 		$attachments			= $this->wpdb->get_results( $query );
@@ -839,12 +831,8 @@ EOD;
 			$attachment_count++;
 		}
 
-		// TODO report message
-		if ( false && ! $post_id ) {
-			echo '<h3>' . __( 'Attachments Deleted', 'typo3-importer') . '</h3>';
-			echo '<p>' . sprintf( __( "Successfully removed %s no-post attachments." , 'typo3-importer'), number_format( $attachment_count ) ) . '</p>';
-			echo '<hr />';
-		}
+		if ( $report )
+			add_settings_error( __( 'Attachments Deleted', 'typo3-importer'), 'attachments', sprintf( __( "Successfully removed %s no-post attachments." , 'typo3-importer'), number_format( $attachment_count ) ), 'updated' );
 	}
 	
 }
