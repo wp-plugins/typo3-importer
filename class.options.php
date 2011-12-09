@@ -10,6 +10,7 @@ class T3I_Settings {
 	private $sections;
 	private $checkboxes;
 	private $settings;
+	private $required			= ' <span style="color: red;">*</span>';
 	
 	/**
 	 * Construct
@@ -67,6 +68,7 @@ class T3I_Settings {
 			'type'    => 'text',
 			'section' => 'general',
 			'choices' => array(),
+			'req'     => '',
 			'class'   => ''
 		);
 			
@@ -79,13 +81,17 @@ class T3I_Settings {
 			'std'       => $std,
 			'choices'   => $choices,
 			'label_for' => $id,
-			'class'     => $class
+			'class'     => $class,
+			'req'		=> $req
 		);
 		
 		if ( $type == 'checkbox' )
 			$this->checkboxes[] = $id;
+
+		if ( '' != $req )
+			$req	= $this->required;
 		
-		add_settings_field( $id, $title, array( $this, 'display_setting' ), 't3i-options', $section, $field_args );
+		add_settings_field( $id, $title . $req, array( $this, 'display_setting' ), 't3i-options', $section, $field_args );
 	}
 	
 	/**
@@ -295,9 +301,10 @@ EOD;
 		// TYPO3 Website Access
 		$this->settings['typo3_url'] = array(
 			'title'   => __( 'Website URL', 'typo3-importer'),
-			'desc'    => __( 'e.g. http://example.com', 'typo3-importer'),
+			'desc'    => __( 'e.g. http://example.com/', 'typo3-importer'),
 			'std'     => '',
 			'type'    => 'text',
+			'req'	=> true,
 			'section' => 'typo3'
 		);
 		
@@ -305,6 +312,7 @@ EOD;
 			'title'   => __( 'Database Host', 'typo3-importer'),
 			'std'     => '',
 			'type'    => 'text',
+			'req'	=> true,
 			'section' => 'typo3'
 		);
 		
@@ -312,6 +320,7 @@ EOD;
 			'title'   => __( 'Database Name', 'typo3-importer'),
 			'std'     => '',
 			'type'    => 'text',
+			'req'	=> true,
 			'section' => 'typo3'
 		);
 		
@@ -319,6 +328,7 @@ EOD;
 			'title'   => __( 'Database Username', 'typo3-importer'),
 			'std'     => '',
 			'type'    => 'text',
+			'req'	=> true,
 			'section' => 'typo3'
 		);
 		
@@ -326,6 +336,7 @@ EOD;
 			'title'   => __( 'Database Password', 'typo3-importer'),
 			'type'    => 'password',
 			'std'     => '',
+			'req'	=> true,
 			'section' => 'typo3'
 		);
 		
@@ -703,7 +714,7 @@ EOD;
 		// db connectivity
 		
 		if ( '' == $input['typo3_url'] ) {
-			add_settings_error( 't3i-options', 'typo3_url', __('TYPO3 website URL is required', 'typo3-importer') );
+			add_settings_error( 't3i-options', 'typo3_url', __('Website URL is required', 'typo3-importer') );
 		} else {
 			$typo3_url			= $input['typo3_url'];
 			// append / if needed and save to options
@@ -716,24 +727,24 @@ EOD;
 
 			// check for typo3_url validity & reachability
 			if ( ! $this->_is_typo3_website( $typo3_url ) ) {
-				add_settings_error( 't3i-options', 'typo3_url', __( "TYPO3 website URL isn't valid", 'typo3-importer' ) );
+				add_settings_error( 't3i-options', 'typo3_url', __( "TYPO3 site not found at given Website URL", 'typo3-importer' ) );
 			}
 		}
 		
 		if ( '' == $input['t3db_host'] ) {
-			add_settings_error( 't3i-options', 't3db_host', __('TYPO3 Database Host is required', 'typo3-importer') );
+			add_settings_error( 't3i-options', 't3db_host', __('Database Host is required', 'typo3-importer') );
 		}
 		
 		if ( '' == $input['t3db_name'] ) {
-			add_settings_error( 't3i-options', 't3db_name', __('TYPO3 Database Name is required', 'typo3-importer') );
+			add_settings_error( 't3i-options', 't3db_name', __('Database Name is required', 'typo3-importer') );
 		}
 		
 		if ( '' == $input['t3db_username'] ) {
-			add_settings_error( 't3i-options', 't3db_username', __('TYPO3 Database Username is required', 'typo3-importer') );
+			add_settings_error( 't3i-options', 't3db_username', __('Database Username is required', 'typo3-importer') );
 		}
 		
 		if ( '' == $input['t3db_password'] ) {
-			add_settings_error( 't3i-options', 't3db_password', __('TYPO3 Database Password is required', 'typo3-importer') );
+			add_settings_error( 't3i-options', 't3db_password', __('Database Password is required', 'typo3-importer') );
 		}
 
 		if ( isset( $input['delete'] ) && $input['delete'] ) {
