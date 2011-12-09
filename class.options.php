@@ -703,7 +703,37 @@ EOD;
 		// db connectivity
 		
 		if ( '' == $input['typo3_url'] ) {
-			add_settings_error( __( 'Website URL', 'typo3-importer'), 'typo3_url', __('TYPO3 website URL is required', 'typo3-importer') );
+			add_settings_error( 't3i-options', 'typo3_url', __('TYPO3 website URL is required', 'typo3-importer') );
+		} else {
+			$typo3_url			= $input['typo3_url'];
+			// append / if needed and save to options
+			$typo3_url	= preg_replace('#(/{0,})?$#', '/',  $typo3_url);
+			// silly // fix, above regex no matter what doesn't seem to work on 
+			// this
+			$typo3_url	= preg_replace('#//$#', '/',  $typo3_url);
+			// Store details for later
+			$input['typo3_url']	= $typo3_url;
+
+			// check for typo3_url validity & reachability
+			if ( ! $this->_is_typo3_website( $typo3_url ) ) {
+				add_settings_error( 't3i-options', 'typo3_url', __( "TYPO3 website URL isn't valid", 'typo3-importer' ) );
+			}
+		}
+		
+		if ( '' == $input['t3db_host'] ) {
+			add_settings_error( 't3i-options', 't3db_host', __('TYPO3 Database Host is required', 'typo3-importer') );
+		}
+		
+		if ( '' == $input['t3db_name'] ) {
+			add_settings_error( 't3i-options', 't3db_name', __('TYPO3 Database Name is required', 'typo3-importer') );
+		}
+		
+		if ( '' == $input['t3db_username'] ) {
+			add_settings_error( 't3i-options', 't3db_username', __('TYPO3 Database Username is required', 'typo3-importer') );
+		}
+		
+		if ( '' == $input['t3db_password'] ) {
+			add_settings_error( 't3i-options', 't3db_password', __('TYPO3 Database Password is required', 'typo3-importer') );
 		}
 
 		if ( isset( $input['delete'] ) && $input['delete'] ) {
@@ -743,8 +773,32 @@ EOD;
 			return $input;
 		}
 
-		return false;
-		
+		return $input;
+
+	}
+
+	function _is_typo3_website( $url = null ) {
+		// regex url
+		if ( filter_var( $url, FILTER_VALIDATE_URL ) ) {
+			// pull site's TYPO3 admin url, http://example.com/typo3
+			$typo3_url			= preg_replace( '#$#', 'typo3/index.php', $url );
+
+			// check for TYPO3 header code
+			$html				= @file_get_contents( $typo3_url );
+
+			// look for `<meta name="generator" content="TYPO3`
+			// looking for meta doesn't work as TYPO3 throws browser error
+			// if exists, return true, else false
+			if ( preg_match( '#typo3logo#', $html ) ) {
+				return true;
+			} else {
+				// not typo3 site
+				return false;
+			}
+		} else {
+			// bad url
+			return false;
+		}
 	}
 
 	function delete_comments() {
@@ -762,7 +816,7 @@ EOD;
 			$comment_count++;
 		}
 
-		add_settings_error( __( 'Comments Deleted', 'typo3-importer'), 'comments', sprintf( __( "Successfully removed %s comments." , 'typo3-importer'), number_format( $comment_count ) ), 'updated' );
+		add_settings_error( 't3i-options', 'comments', sprintf( __( "Successfully removed %s comments." , 'typo3-importer'), number_format( $comment_count ) ), 'updated' );
 	}
 
 	function force_private_posts() {
@@ -790,9 +844,9 @@ EOD;
 		}
 
 		if ( $post_count )
-			add_settings_error( __( 'Prior Imports Forced to Private Status', 'typo3-importer'), 'force_private_posts', sprintf( __( "Successfully updated %s TYPO3 news imports to 'Private'." , 'typo3-importer'), number_format( $post_count ) ), 'updated' );
+			add_settings_error( 't3i-options', 'force_private_posts', sprintf( __( "Successfully updated %s TYPO3 news imports to 'Private'." , 'typo3-importer'), number_format( $post_count ) ), 'updated' );
 		else
-			add_settings_error( __( 'Prior Imports Forced to Private Status', 'typo3-importer'), 'force_private_posts', __( "No TYPO3 news imports found to mark as 'Private'." , 'typo3-importer'), 'updated' );
+			add_settings_error( 't3i-options', 'force_private_posts', __( "No TYPO3 news imports found to mark as 'Private'." , 'typo3-importer'), 'updated' );
 	}
 
 	function delete_import() {
@@ -816,7 +870,7 @@ EOD;
 			$post_count++;
 		}
 
-		add_settings_error( __( 'Prior Imports Deleted', 'typo3-importer'), 'imports', sprintf( __( "Successfully removed %s TYPO3 news and their related media and comments." , 'typo3-importer'), number_format( $post_count ) ), 'updated' );
+		add_settings_error( 't3i-options', 'imports', sprintf( __( "Successfully removed %s TYPO3 news and their related media and comments." , 'typo3-importer'), number_format( $post_count ) ), 'updated' );
 	}
 
 	function delete_attachments( $post_id = false, $report = true ) {
@@ -832,7 +886,7 @@ EOD;
 		}
 
 		if ( $report )
-			add_settings_error( __( 'Attachments Deleted', 'typo3-importer'), 'attachments', sprintf( __( "Successfully removed %s no-post attachments." , 'typo3-importer'), number_format( $attachment_count ) ), 'updated' );
+			add_settings_error( 't3i-options', 'attachments', sprintf( __( "Successfully removed %s no-post attachments." , 'typo3-importer'), number_format( $attachment_count ) ), 'updated' );
 	}
 	
 }

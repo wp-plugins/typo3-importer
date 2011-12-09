@@ -255,19 +255,11 @@ EOD;
 	}
 
 	function check_typo3_access() {
-		// make array of errors
-		// return error screen with link to options
-		// Log in to confirm the details are correct
+		// TODO set checked okay bit via options setter so we don't have to 
+		// repeat checks here
+
 		if ( ! $this->typo3_url ) {
 			$this->errors[] 			= __( "TYPO3 website URL is missing", 'typo3-importer' );
-		} else {
-			// append / if needed and save to options
-			$this->typo3_url	= preg_replace('#(/{0,})?$#', '/',  $this->typo3_url);
-			// silly // fix, above regex no matter what doesn't seem to work on 
-			// this
-			$this->typo3_url	= preg_replace('#//$#', '/',  $this->typo3_url);
-			// Store details for later
-			update_t3i_options( 'typo3_url', $this->typo3_url );
 		}
 
 		if ( ! $this->t3db_host ) {
@@ -286,12 +278,7 @@ EOD;
 			$this->errors[] 			= __( "TYPO3 database password is missing", 'typo3-importer' );
 		}
 	
-		// TODO actually check for DB access
-
-		// check for typo3_url validity & reachability
-		if ( ! $this->_is_typo3_website( $this->typo3_url ) ) {
-			$this->errors[] 			= __( "TYPO3 website URL isn't valid", 'typo3-importer' );
-		}
+		// TODO check for DB access
 
 		if ( ! count( $this->errors ) ) {
 			return true;
@@ -310,30 +297,6 @@ EOD;
 		}
 		echo '</ul>';
 		echo '<p>' . sprintf( __( 'Please review your %s before proceeding.', 'typo3-importer' ), $this->options_link ) . '</p>';
-	}
-
-	function _is_typo3_website( $url = null ) {
-		// regex url
-		if ( filter_var( $url, FILTER_VALIDATE_URL ) ) {
-			// pull site's TYPO3 admin url, http://example.com/typo3
-			$typo3_url			= preg_replace( '#$#', 'typo3/index.php', $url );
-
-			// check for TYPO3 header code
-			$html				= file_get_contents( $typo3_url );
-
-			// look for `<meta name="generator" content="TYPO3`
-			// looking for meta doesn't work as TYPO3 throws browser error
-			// if exists, return true, else false
-			if ( preg_match( '#typo3logo#', $html ) ) {
-				return true;
-			} else {
-				// not typo3 site
-				return false;
-			}
-		} else {
-			// bad url
-			return false;
-		}
 	}
 
 
