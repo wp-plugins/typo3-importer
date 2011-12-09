@@ -201,7 +201,7 @@ EOD;
 		echo					<<<EOD
 			<div style="width: 50%;">
 				<p><img class="alignright size-medium" title="Michael in Red Square, Moscow, Russia" src="/wp-content/plugins/typo3-importer/media/michael-cannon-red-square-300x2251.jpg" alt="Michael in Red Square, Moscow, Russia" width="300" height="225" /><a href="http://wordpress.org/extend/plugins/typo3-importer/">TYPO3 Importer</a> is by <a href="mailto:michael@typo3vagabond.com">Michael Cannon</a>.</p>
-				<p>He's Peichi’s man, an adventurous water rat & a TYPO3 support guru who’s living simply, roaming about & smiling more.</p>
+				<p>He's <a title="Lot's of stuff about Peichi Liu..." href="http://peimic.com/t/peichi-liu/">Peichi’s</a> smiling man, an adventurous&nbsp;<a title="Water rat" href="http://www.chinesezodiachoroscope.com/facebook/index1.php?user_id=690714457" target="_blank">water-rat</a>,&nbsp;<a title="Michael's poetic like literary ramblings" href="http://peimic.com/t/poetry/">poet</a>,&nbsp;<a title="Road biker, cyclist, biking; whatever you call, I love to ride" href="http://peimic.com/c/biking/">road biker</a>,&nbsp;<a title="My traveled to country list, is more than my age." href="http://peimic.com/c/travel/">world traveler</a>,&nbsp;<a title="World Wide Opportunities on Organic Farms" href="http://peimic.com/t/WWOOF/">WWOOF’er</a>&nbsp;and is the&nbsp;<a title="The TYPO3 Vagabond" href="http://typo3vagabond.com/c/featured/">TYPO3 Vagabond</a>&nbsp;with&nbsp;<a title="in2code. Wir leben TYPO3" href="http://www.in2code.de/">in2code</a>.</p>
 				<p>If you like this plugin, <a href="http://typo3vagabond.com/about-typo3-vagabond/donate/">please donate</a>.</p>
 			</div>
 EOD;
