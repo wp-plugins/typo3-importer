@@ -4,7 +4,7 @@ Donate link: http://typo3vagabond.com/about-typo3-vagabond/donate/
 Tags: typo3, importer
 Requires at least: 3.0.0
 Tested up to: 3.2.1
-Stable tag: 2.0.0
+Stable tag: 2.0.1
 
 Easily import thousands of tt_news and tx_comments from TYPO3 into WordPress.
 
@@ -37,6 +37,7 @@ Inline and related images will be added to the Media Library. The first image fo
 
 **Import Options**
 
+* Default Author
 * Protected Post Password
 * Override Post Status as...?
 	* No Change
@@ -98,6 +99,7 @@ Inline and related images will be added to the Media Library. The first image fo
 * Don't Import Comments
 * Don't Import Media
 * Import Limit
+* Debug Mode
 
 **Oops**
 
@@ -128,6 +130,9 @@ Yes. Any sponsoring would be greatly welcome. Please [donate](http://typo3vagabo
 
 == Changelog ==
 = trunk =
+-
+
+= 2.0.1 =
 * Installation directions update
 * Revise readme description
 * Update TODOs
@@ -139,7 +144,6 @@ Yes. Any sponsoring would be greatly welcome. Please [donate](http://typo3vagabo
 * Ignore file:// sources, they're none existant except on original computer
 * Apply display none to images with file:// based source
 * Update text domain and language files
--
 
 = 2.0.0 =
 * Remove TYPO3 tx_comments approved requirement
