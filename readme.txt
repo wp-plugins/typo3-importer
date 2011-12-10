@@ -38,7 +38,6 @@ Yes. Any sponsoring would be greatly welcome. Please [donate](http://typo3vagabo
 1. Where to find TYPO3 Importer in Tools
 2. TYPO3 Importer settings
 3. TYPO3 news entries being imported
-4. TYPO3 comment entries being imported
 
 == Changelog ==
 = trunk =
@@ -52,6 +51,11 @@ Yes. Any sponsoring would be greatly welcome. Please [donate](http://typo3vagabo
 * Configure related files and links header text, tag and wrapper
 * Enable custom news WHERE & ORDER clause
 * Enable specific news uid import/skip
+* Require TYPO3 access fields
+* Check that TYPO3 site exists on Website URL
+* Import related comments during each news import
+* Remove comment threading since TYPO3 didn't support it
+* Update screenshots
 -
 
 = 1.0.2 =

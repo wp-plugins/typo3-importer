@@ -197,7 +197,6 @@ EOD;
 	 */
 	public function display_about_section() {
 		
-		// TODO update verbiage from about page with links to Peimic 
 		echo					<<<EOD
 			<div style="width: 50%;">
 				<p><img class="alignright size-medium" title="Michael in Red Square, Moscow, Russia" src="/wp-content/plugins/typo3-importer/media/michael-cannon-red-square-300x2251.jpg" alt="Michael in Red Square, Moscow, Russia" width="300" height="225" /><a href="http://wordpress.org/extend/plugins/typo3-importer/">TYPO3 Importer</a> is by <a href="mailto:michael@typo3vagabond.com">Michael Cannon</a>.</p>
@@ -709,9 +708,21 @@ EOD;
 	public function validate_settings( $input ) {
 		
 		// TODO validate for
-		// CSV of posts_to_import, skip_importing_post_ids
-		// valid TYPO3 url
-		// db connectivity
+		// TYPO3 db connectivity
+
+		if ( '' != $input['news_to_import'] ) {
+			$news_to_import		= $input['news_to_import'];
+			$news_to_import		= preg_replace( '#\s+#', '', $news_to_import);
+
+			$input['news_to_import']	= $news_to_import;
+		}
+		
+		if ( '' != $input['news_to_skip'] ) {
+			$news_to_skip		= $input['news_to_skip'];
+			$news_to_skip		= preg_replace( '#\s+#', '', $news_to_skip);
+
+			$input['news_to_skip']	= $news_to_skip;
+		}
 		
 		if ( '' == $input['typo3_url'] ) {
 			add_settings_error( 't3i-options', 'typo3_url', __('Website URL is required', 'typo3-importer') );

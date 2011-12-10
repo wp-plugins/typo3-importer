@@ -39,13 +39,12 @@ require_once( 'class.options.php' );
  * @package typo3-importer
  */
 class TYPO3_Importer {
-	// var $comments_order	= ' ORDER BY c.uid ASC ';
-	// var $comments_where	= ' AND c.external_prefix LIKE "tx_ttnews" AND c.deleted = 0 AND c.hidden = 0';
 	var $errors					= array();
 	var $menu_id;
 	var $newline_typo3			= "\r\n";
 	var $newline_wp				= "\n\n";
 	var $post_status_options	= array( 'draft', 'publish', 'pending', 'future', 'private' );
+	var $postmap				= array();
 	var $t3db					= null;
 	var $t3db_host				= null;
 	var $t3db_name				= null;
@@ -507,10 +506,156 @@ EOD;
 		}
 
 		if ( ! get_t3i_options( 'no_comments_import' ) ) {
-			// TODO import comments
+			$this->process_comments();
 		}
 
 		die( json_encode( array( 'success' => sprintf( __( '&quot;<a href="%1$s" target="_blank">%2$s</a>&quot; Post ID %3$s was successfully processed in %4$s seconds.', 'typo3-importer' ), get_permalink( $post_id ), esc_html( get_the_title( $post_id ) ), $post_id, timer_stop() ) ) ) );
+	}
+
+	function process_comments() {
+		$comments				= $this->get_comments();
+
+		if ( ! count( $comments ) )
+			return;
+
+		foreach ( $comments as $comment ) {
+			$inserted			= $this->import_comment( $comment );
+		}
+	}
+
+	function import_comment( $comment_arr ) {
+		// Parse this comment into an array and insert
+		$comment				= $this->parse_comment( $comment_arr );
+		$comment				= wp_filter_comment( $comment );
+
+		// redo comment approval 
+		if ( check_comment($comment['comment_author'], $comment['comment_author_email'], $comment['comment_author_url'], $comment['comment_content'], $comment['comment_author_IP'], $comment['comment_agent'], $comment['comment_type']) )
+			$approved			= 1;
+		else
+			$approved			= 0;
+
+		if ( wp_blacklist_check($comment['comment_author'], $comment['comment_author_email'], $comment['comment_author_url'], $comment['comment_content'], $comment['comment_author_IP'], $comment['comment_agent']) ) {
+			$approved			= 'spam';
+		} elseif ( $this->askimet_spam_checker( $comment ) ) {
+			$approved			= 'spam';
+		}
+
+		// auto approve imported comments
+		if ( get_t3i_options('approve_comments') && $approved !== 'spam' ) {
+			$approved			= 1;
+		}
+
+		$comment['comment_approved']	= $approved;
+
+		// Simple duplicate check
+		$dupe					= "
+			SELECT comment_ID
+			FROM {$this->wpdb->comments}
+			WHERE comment_post_ID = '{$comment['comment_post_ID']}'
+				AND comment_approved != 'trash'
+				AND comment_author = '{$comment['comment_author']}'
+				AND comment_author_email = '{$comment['comment_author_email']}'
+				AND comment_content = '{$comment['comment_content']}'
+			LIMIT 1
+		";
+		$comment_ID				= $this->wpdb->get_var($dupe);
+
+		// echo '<li>';
+
+		if ( ! $comment_ID ) {
+			// printf( __( 'Imported comment from <strong>%s</strong>', 'typo3-importer'), stripslashes( $comment['comment_author'] ) );
+			$inserted			= wp_insert_comment( $comment );
+		} else {
+			// printf( __( 'Comment from <strong>%s</strong> already exists.', 'typo3-importer'), stripslashes( $comment['comment_author'] ) );
+			$inserted			= false;
+		}
+
+		// echo '</li>';
+		// ob_flush(); flush();
+
+		return $inserted;
+	}
+
+	/**
+	 * Askimet spam checker
+	 *
+	 * @ref http://www.binarymoon.co.uk/2010/03/akismet-plugin-theme-stop-spam-dead/
+	 * @param	array	content	$content['comment_author']
+	 *							$content['comment_author_email']
+	 *							$content['comment_author_url']
+	 *							$content['comment_content']
+	 * @return	boolean	true	is spam	false	is not spam
+	 */
+	function askimet_spam_checker( $content ) {
+		// innocent until proven guilty
+		$is_spam				= false;
+		$content				= (array) $content;
+
+		if ( function_exists( 'akismet_init' ) ) {
+			$wpcom_api_key		= get_option( 'wordpress_api_key' );
+
+			if ( ! empty( $wpcom_api_key ) ) {
+				global $akismet_api_host, $akismet_api_port;
+
+				// set remaining required values for akismet api
+				$content['user_ip']		= preg_replace( '/[^0-9., ]/', '', $_SERVER['REMOTE_ADDR'] );
+				$content['user_agent']	= $_SERVER['HTTP_USER_AGENT'];
+				$content['referrer']	= $_SERVER['HTTP_REFERER'];
+				$content['blog']		= get_option('home');
+
+				if ( empty( $content['referrer'] ) ) {
+					$content['referrer']	= get_permalink();
+				}
+
+				$query_str		= '';
+
+				foreach( $content as $key => $data ) {
+					if ( ! empty( $data ) ) {
+						$query_str	.= $key . '=' . urlencode(	stripslashes( $data ) ) . '&';
+					}
+				}
+
+				$response		= akismet_http_post( $query_str, $akismet_api_host, '/1.1/comment-check', $akismet_api_port );
+
+				if ( 'true' == $response[1] ) {
+					update_option( 'akismet_spam_count', get_option('akismet_spam_count') + 1 );
+					$is_spam		= true;
+				}
+			}
+		}
+
+		return $is_spam;
+	}
+
+	function parse_comment( $comment ) {
+		// Clean up content
+		$content				= $this->_prepare_content( $comment['comment_content'] );
+		// double-spacing issues
+		$content				= str_replace( $this->newline_wp, "\n", $content );
+
+		// Send back the array of details
+		return array(
+			'comment_post_ID'		=> $this->get_wp_post_ID( $comment['typo3_comment_post_ID'] ),
+			'comment_author'		=> $comment['comment_author'],
+			'comment_author_url'	=> $comment['comment_author_url'],
+			'comment_author_email'	=> $comment['comment_author_email'],
+			'comment_content'		=> $content,
+			'comment_date'			=> $comment['comment_date'],
+			'comment_author_IP'		=> $comment['comment_author_IP'],
+			'comment_approved'		=> $comment['comment_approved'],
+			'comment_karma'			=> $comment['itemid'], // Need this and next value until rethreading is done
+			'comment_agent'			=> 't3:tx_comments',  // Custom type, so we can find it later for processing
+			'comment_type'			=> '',	// blank for comment
+			'user_ID'				=> email_exists( $comment['comment_author_email'] ),
+		);
+	}
+
+	// Gets the post_ID that a TYPO3 post has been saved as within WP
+	function get_wp_post_ID( $post ) {
+		if ( empty( $this->postmap[$post] ) )
+		 	$this->postmap[$post] = (int) $this->wpdb->get_var( $this->wpdb->prepare( "SELECT post_id FROM {$this->wpdb->postmeta} WHERE meta_key = 't3:tt_news.uid' AND meta_value = %d", $post ) );
+
+		return $this->postmap[$post];
 	}
 
 	function import_news_as_post( $news ) {
@@ -1007,6 +1152,41 @@ EOD;
 		}
 
 		return $username;
+	}
+
+	// return array of comment entries
+	// attempts to grab comments within same time frame as the imported news
+	function get_comments( $news_uid = null ) {
+		if ( is_null( $news_uid ) ) {
+			$news_uid			= $this->news_uid;
+		}
+
+		$results				= array();
+
+		$query_items			= "
+			SELECT
+				REPLACE(c.external_ref,'tt_news_','') typo3_comment_post_ID,
+				c.uid itemid,
+				FROM_UNIXTIME(c.tstamp) comment_date,
+				c.approved comment_approved,
+				TRIM(CONCAT(c.firstname, ' ', c.lastname)) comment_author,
+				c.email comment_author_email,
+				c.homepage comment_author_url,
+				c.content comment_content,
+				c.remote_addr comment_author_IP
+			FROM tx_comments_comments c
+			WHERE 1 = 1
+				AND c.external_prefix LIKE 'tx_ttnews'
+				AND c.deleted = 0 AND c.hidden = 0
+				AND c.external_ref LIKE 'tt_news_{$news_uid}'
+			ORDER BY c.uid ASC
+		";
+
+		$res_items				= $this->t3db->get_results($query_items, ARRAY_A);
+		if ( count( $res_items ) )
+			$results			= $res_items;
+
+		return $results;
 	}
 
 	function get_news( $uid = null ) {
