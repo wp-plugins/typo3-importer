@@ -356,7 +356,7 @@ EOD;
 			'type'    => 'select',
 			'std'     => '',
 			'choices' => array(
-				'0'	=> 'Current user',
+				'0'	=> __('Current user', 'typo3-importer'),
 			)
 		);
 
@@ -382,12 +382,12 @@ EOD;
 			'type'    => 'radio',
 			'std'     => 'default',
 			'choices' => array(
-				'default'	=> 'No Change',
-				'draft'		=> 'Draft',
-				'publish'	=> 'Publish',
-				'pending'	=> 'Pending',
-				'future'	=> 'Future',
-				'private'	=> 'Private'
+				'default'	=> __('No Change', 'typo3-importer'),
+				'draft'		=> __('Draft', 'typo3-importer'),
+				'publish'	=> __('Publish', 'typo3-importer'),
+				'pending'	=> __('Pending', 'typo3-importer'),
+				'future'	=> __('Future', 'typo3-importer'),
+				'private'	=> __('Private', 'typo3-importer')
 			)
 		);
 
@@ -398,17 +398,17 @@ EOD;
 			'type'    => 'select',
 			'std'     => '0',
 			'choices' => array(
-				'0'	=> 'No',
-				'1'	=> 'After 1st paragraph',
-				'2'	=> 'After 2nd paragraph',
-				'3'	=> 'After 3rd paragraph',
-				'4'	=> 'After 4th paragraph',
-				'5'	=> 'After 5th paragraph',
-				'6'	=> 'After 6th paragraph',
-				'7'	=> 'After 7th paragraph',
-				'8'	=> 'After 8th paragraph',
-				'9'	=> 'After 9th paragraph',
-				'10'	=> 'After 10th paragraph'
+				'0'	=> __('No', 'typo3-importer'),
+				'1'	=> __('After 1st paragraph', 'typo3-importer'),
+				'2'	=> __('After 2nd paragraph', 'typo3-importer'),
+				'3'	=> __('After 3rd paragraph', 'typo3-importer'),
+				'4'	=> __('After 4th paragraph', 'typo3-importer'),
+				'5'	=> __('After 5th paragraph', 'typo3-importer'),
+				'6'	=> __('After 6th paragraph', 'typo3-importer'),
+				'7'	=> __('After 7th paragraph', 'typo3-importer'),
+				'8'	=> __('After 8th paragraph', 'typo3-importer'),
+				'9'	=> __('After 9th paragraph', 'typo3-importer'),
+				'10'	=> __('After 10th paragraph', 'typo3-importer')
 			)
 		);
 
@@ -427,18 +427,18 @@ EOD;
 			'type'    => 'select',
 			'std'     => '-1',
 			'choices' => array(
-				'0'	=> 'No',
-				'1'	=> 'After 1st paragraph',
-				'2'	=> 'After 2nd paragraph',
-				'3'	=> 'After 3rd paragraph',
-				'4'	=> 'After 4th paragraph',
-				'5'	=> 'After 5th paragraph',
-				'6'	=> 'After 6th paragraph',
-				'7'	=> 'After 7th paragraph',
-				'8'	=> 'After 8th paragraph',
-				'9'	=> 'After 9th paragraph',
-				'10'	=> 'After 10th paragraph',
-				'-1'	=> 'After content'
+				'0'	=> __('No', 'typo3-importer'),
+				'1'	=> __('After 1st paragraph', 'typo3-importer'),
+				'2'	=> __('After 2nd paragraph', 'typo3-importer'),
+				'3'	=> __('After 3rd paragraph', 'typo3-importer'),
+				'4'	=> __('After 4th paragraph', 'typo3-importer'),
+				'5'	=> __('After 5th paragraph', 'typo3-importer'),
+				'6'	=> __('After 6th paragraph', 'typo3-importer'),
+				'7'	=> __('After 7th paragraph', 'typo3-importer'),
+				'8'	=> __('After 8th paragraph', 'typo3-importer'),
+				'9'	=> __('After 9th paragraph', 'typo3-importer'),
+				'10'	=> __('After 10th paragraph', 'typo3-importer'),
+				'-1'	=> __('After content', 'typo3-importer')
 			)
 		);
 
@@ -455,13 +455,13 @@ EOD;
 			'type'    => 'select',
 			'std'     => '3',
 			'choices' => array(
-				'0'	=> 'None',
-				'1'	=> 'H1',
-				'2'	=> 'H2',
-				'3'	=> 'H3',
-				'4'	=> 'H4',
-				'5'	=> 'H5',
-				'6'	=> 'H6'
+				'0'	=> __('None', 'typo3-importer'),
+				'1'	=> __('H1', 'typo3-importer'),
+				'2'	=> __('H2', 'typo3-importer'),
+				'3'	=> __('H3', 'typo3-importer'),
+				'4'	=> __('H4', 'typo3-importer'),
+				'5'	=> __('H5', 'typo3-importer'),
+				'6'	=> __('H6', 'typo3-importer')
 			)
 		);
 		
@@ -485,13 +485,13 @@ EOD;
 			'type'    => 'select',
 			'std'     => '3',
 			'choices' => array(
-				'0'	=> 'None',
-				'1'	=> 'H1',
-				'2'	=> 'H2',
-				'3'	=> 'H3',
-				'4'	=> 'H4',
-				'5'	=> 'H5',
-				'6'	=> 'H6'
+				'0'	=> __('None', 'typo3-importer'),
+				'1'	=> __('H1', 'typo3-importer'),
+				'2'	=> __('H2', 'typo3-importer'),
+				'3'	=> __('H3', 'typo3-importer'),
+				'4'	=> __('H4', 'typo3-importer'),
+				'5'	=> __('H5', 'typo3-importer'),
+				'6'	=> __('H6', 'typo3-importer')
 			)
 		);
 		

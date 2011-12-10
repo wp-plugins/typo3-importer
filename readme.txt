@@ -129,7 +129,6 @@ Yes. Any sponsoring would be greatly welcome. Please [donate](http://typo3vagabo
 == Changelog ==
 = trunk =
 * Installation directions update
-* Update for gettext and POT files
 * Revise readme description
 * Update TODOs
 * Import meta keywords and descriptions for All in One SEO, Bizz themes, Headspace2, Thesis and Yoast's WordPress SEO
@@ -138,6 +137,8 @@ Yes. Any sponsoring would be greatly welcome. Please [donate](http://typo3vagabo
 * Set default author
 * Enable debug mode to handle news_to_import directly for testing purposes 
 * Ignore file:// sources, they're none existant except on original computer
+* Apply display none to images with file:// based source
+* Update text domain and language files
 -
 
 = 2.0.0 =
@@ -200,5 +201,4 @@ Yes. Any sponsoring would be greatly welcome. Please [donate](http://typo3vagabo
 * None
 
 == TODOs ==
-* Comment out images with file:// based paths
 * Convert related links like Getting the Most Out of Your LMS: http://www.2elearning.com/markets/executive-suite/top-stories/top-stories-item/article/getting-the-most-from-your-lms.html to <a href=http://www.2elearning.com/markets/executive-suite/top-stories/top-stories-item/article/getting-the-most-from-your-lms.html">Getting the Most Out of Your LMS</a>
