@@ -729,13 +729,13 @@ EOD;
 						break;
 
 					case 'excerpt':
-						// TODO figure out other SEO packages
 						add_post_meta( $post_id, 'thesis_description', $value );
+						add_post_meta( $post_id, 'bizzthemes_description', $value );
 						break;
 
 					case 'keywords':
-						// TODO figure out other SEO packages
 						add_post_meta( $post_id, 'thesis_keywords', $value );
+						add_post_meta( $post_id, 'bizzthemes_keywords', $value );
 						break;
 
 					case 'image':

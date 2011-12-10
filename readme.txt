@@ -63,6 +63,7 @@ Yes. Any sponsoring would be greatly welcome. Please [donate](http://typo3vagabo
 * Don't create users for authors with no email or name
 * Create top right meta links between options and import screens
 * Make best attempts to not duplicate authors as users
+* Set keywords and descriptions for All in One SEO Pack
 
 = 1.0.2 =
 * Update description
