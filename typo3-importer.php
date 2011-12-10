@@ -58,8 +58,8 @@ class TYPO3_Importer {
 	function TYPO3_Importer() {
 
 		// Capability check
-		if ( !current_user_can( 'manage_options' ) )
-			wp_die( __( 'Cheatin&#8217; uh?' , 'typo3-importer') );
+		if ( ! current_user_can( 'manage_options' ) )
+			return;
 
 		if ( ! function_exists( 'admin_url' ) )
 			return false;
