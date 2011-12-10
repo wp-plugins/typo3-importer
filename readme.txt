@@ -132,8 +132,10 @@ Yes. Any sponsoring would be greatly welcome. Please [donate](http://typo3vagabo
 * Installation directions update
 * Update for gettext and POT files
 * Revise readme description
-* Transfer Meta keywords and descriptions for All in One SEO, Bizz themes, Thesis and Yoast's WordPress SEO
 * Update TODOs
+* Import meta keywords and descriptions for All in One SEO, Bizz themes, Headspace2, Thesis and Yoast's WordPress SEO
+* Update Options > Settings verbiage
+* Update TYPO3 Importer verbiage
 -
 
 = 2.0.0 =

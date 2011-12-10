@@ -73,7 +73,7 @@ class TYPO3_Importer {
 		add_action( 'wp_ajax_importtypo3news', array( &$this, 'ajax_process_news' ) );
 		add_filter( 'plugin_action_links', array( &$this, 'add_plugin_action_links' ), 10, 2 );
 		
-		$this->options_link		= '<a href="'.get_admin_url().'options-general.php?page=t3i-options">'.__('TYPO3 Import Options', 'typo3-importer').'</a>';
+		$this->options_link		= '<a href="'.get_admin_url().'options-general.php?page=t3i-options">'.__('Settings', 'typo3-importer').'</a>';
         
 		$this->_create_db_client();
 		$this->_get_custom_sql();
@@ -81,7 +81,7 @@ class TYPO3_Importer {
 	}
 
 
-	// Display a Options link on the main Plugins page
+	// Display a Settings link on the main Plugins page
 	function add_plugin_action_links( $links, $file ) {
 		if ( $file == plugin_basename( __FILE__ ) ) {
 			array_unshift( $links, $this->options_link );
@@ -101,7 +101,7 @@ class TYPO3_Importer {
 		add_action( 'admin_print_styles-' . $this->menu_id, array( &$this, 'styles' ) );
         add_screen_meta_link(
         	't3i-options-link',
-			__('TYPO3 Importer Options', 'typo3-importer'),
+			__('TYPO3 Importer Settings', 'typo3-importer'),
 			admin_url('options-general.php?page=t3i-options'),
 			$this->menu_id,
 			array('style' => 'font-weight: bold;')
@@ -455,7 +455,7 @@ EOD;
 
 	<p><?php _e( "It's possible to change post statuses on import. However, draft posts, will remain as drafts.", 'typo3-importer' ); ?></p>
 
-	<p><?php _e( "If you import TYPO3 news and they've gone live when you didn't want them to, visit the Options screen and look for `Oops`. That's the option to convert imported posts to `Private` thereby removing them from public view.", 'typo3-importer' ); ?></p>
+	<p><?php _e( "If you import TYPO3 news and they've gone live when you didn't want them to, visit the Settings screen and look for `Oops`. That's the option to convert imported posts to `Private` thereby removing them from public view.", 'typo3-importer' ); ?></p>
 
 	<p><?php _e( "Finally, it's possible to delete prior imports and lost comments and attachments.", 'typo3-importer' ); ?></p>
 
@@ -730,6 +730,7 @@ EOD;
 
 					case 'excerpt':
 						add_post_meta( $post_id, '_aioseop_description', $value );
+						add_post_meta( $post_id, '_headspace_description', $value );
 						add_post_meta( $post_id, '_yoast_wpseo_metadesc', $value );
 						add_post_meta( $post_id, 'bizzthemes_description', $value );
 						add_post_meta( $post_id, 'thesis_description', $value );
@@ -737,6 +738,7 @@ EOD;
 
 					case 'keywords':
 						add_post_meta( $post_id, '_aioseop_keywords', $value );
+						add_post_meta( $post_id, '_headspace_keywords', $value );
 						add_post_meta( $post_id, '_yoast_wpseo_metakeywords', $value );
 						add_post_meta( $post_id, 'bizzthemes_keywords', $value );
 						add_post_meta( $post_id, 'thesis_keywords', $value );

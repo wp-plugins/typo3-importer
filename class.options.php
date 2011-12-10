@@ -25,7 +25,7 @@ class T3I_Settings {
 		
 		$this->sections['typo3']	= __( 'TYPO3 Access', 'typo3-importer');
 		$this->sections['selection']	= __( 'News Selection', 'typo3-importer');
-		$this->sections['general']	= __( 'Import Options', 'typo3-importer');
+		$this->sections['general']	= __( 'Import Settings', 'typo3-importer');
 		$this->sections['testing']	= __( 'Testing Options', 'typo3-importer');
 		$this->sections['oops']		= __( 'Oops...', 'typo3-importer');
 		$this->sections['reset']	= __( 'Reset/Restore', 'typo3-importer');
@@ -48,7 +48,7 @@ class T3I_Settings {
 	 */
 	public function add_pages() {
 		
-		$admin_page = add_options_page( __( 'TYPO3 Importer Options', 'typo3-importer'), __( 'TYPO3 Import Options', 'typo3-importer'), 'manage_options', 't3i-options', array( &$this, 'display_page' ) );
+		$admin_page = add_options_page( __( 'TYPO3 Importer Settings', 'typo3-importer'), __( 'TYPO3 Importer Settings', 'typo3-importer'), 'manage_options', 't3i-options', array( &$this, 'display_page' ) );
 		
 		add_action( 'admin_print_scripts-' . $admin_page, array( &$this, 'scripts' ) );
 		add_action( 'admin_print_styles-' . $admin_page, array( &$this, 'styles' ) );
@@ -109,7 +109,7 @@ class T3I_Settings {
 		
 		echo '<div class="wrap">
 	<div class="icon32" id="icon-options-general"></div>
-	<h2>' . __( 'TYPO3 Importer Options', 'typo3-importer') . '</h2>';
+	<h2>' . __( 'TYPO3 Importer Settings', 'typo3-importer') . '</h2>';
 	
 		echo '<form action="options.php" method="post">';
 	
@@ -348,7 +348,7 @@ EOD;
 		);
 		
 		
-		// Import Options
+		// Import Settings
 		$this->settings['protected_password'] = array(
 			'title'   => __( 'Protected Post Password', 'typo3-importer'),
 			'desc'    => __( 'If set, posts will require this password to be viewed.', 'typo3-importer'),
