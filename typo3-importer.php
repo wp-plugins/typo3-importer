@@ -729,13 +729,17 @@ EOD;
 						break;
 
 					case 'excerpt':
-						add_post_meta( $post_id, 'thesis_description', $value );
+						add_post_meta( $post_id, '_aioseop_description', $value );
+						add_post_meta( $post_id, '_yoast_wpseo_metadesc', $value );
 						add_post_meta( $post_id, 'bizzthemes_description', $value );
+						add_post_meta( $post_id, 'thesis_description', $value );
 						break;
 
 					case 'keywords':
-						add_post_meta( $post_id, 'thesis_keywords', $value );
+						add_post_meta( $post_id, '_aioseop_keywords', $value );
+						add_post_meta( $post_id, '_yoast_wpseo_metakeywords', $value );
 						add_post_meta( $post_id, 'bizzthemes_keywords', $value );
+						add_post_meta( $post_id, 'thesis_keywords', $value );
 						break;
 
 					case 'image':
