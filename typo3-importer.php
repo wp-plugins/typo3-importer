@@ -143,9 +143,13 @@ EOD;
 	_e('TYPO3 Importer', 'typo3-importer');
 	echo '</h2>';
 
-		// testing helper
-		if ( isset( $_REQUEST['importtypo3news'] ) && $_REQUEST['importtypo3news'] ) {
-			$this->ajax_process_news();
+		if ( get_t3i_options( 'debug_mode' ) ) {
+			$news_to_import		= get_t3i_options( 'news_to_import' );
+			$news_to_import		= explode( ',', $news_to_import );
+			foreach ( $news_to_import as $key => $news_uid ) {
+				$this->news_uid		= $news_uid;
+				$this->ajax_process_news();
+			}
 		}
 
 		// If the button was clicked
@@ -477,15 +481,16 @@ EOD;
 
 	// Process a single image ID (this is an AJAX handler)
 	function ajax_process_news() {
-		error_reporting( 0 ); // Don't break the JSON result
-		header( 'Content-type: application/json' );
-
-		$this->news_uid			= (int) $_REQUEST['id'];
+		if ( ! get_t3i_options( 'debug_mode' ) ) {
+			error_reporting( 0 ); // Don't break the JSON result
+			header( 'Content-type: application/json' );
+			$this->news_uid		= (int) $_REQUEST['id'];
+		}
 
 		// grab the record from TYPO3
 		$news					= $this->get_news( $this->news_uid );
 
-		if ( ! is_array( $news ) || 1 > count( $news ) || $news['itemid'] != $this->news_uid )
+		if ( ! is_array( $news ) || $news['itemid'] != $this->news_uid )
 			die( json_encode( array( 'error' => sprintf( __( "Failed import: %s isn't a TYPO3 news record.", 'typo3-importer' ), esc_html( $_REQUEST['id'] ) ) ) ) );
 
 		// TODO progress by post
@@ -1253,10 +1258,13 @@ EOD;
 				n.links
 			FROM tt_news n
 			WHERE 1 = 1
-				AND uid = {$uid}
+				AND n.uid = {$uid}
 		";
 
 		$row					= $this->t3db->get_row($query, ARRAY_A);
+
+		if ( is_null( $row ) )
+			return $row;
 
 		$row['props']['datetime']		= $row['datetime'];
 

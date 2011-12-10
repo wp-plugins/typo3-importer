@@ -136,6 +136,7 @@ Yes. Any sponsoring would be greatly welcome. Please [donate](http://typo3vagabo
 * Update Options > Settings verbiage
 * Update TYPO3 Importer verbiage
 * Set default author
+* Enable debug mode to handle news_to_import directly for testing purposes 
 -
 
 = 2.0.0 =
@@ -198,6 +199,5 @@ Yes. Any sponsoring would be greatly welcome. Please [donate](http://typo3vagabo
 * None
 
 == TODOs ==
-* Enable debug mode
 * Comment out images with file:// based paths
 * Convert related links like Getting the Most Out of Your LMS: http://www.2elearning.com/markets/executive-suite/top-stories/top-stories-item/article/getting-the-most-from-your-lms.html to <a href=http://www.2elearning.com/markets/executive-suite/top-stories/top-stories-item/article/getting-the-most-from-your-lms.html">Getting the Most Out of Your LMS</a>

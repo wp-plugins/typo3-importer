@@ -532,6 +532,14 @@ EOD;
 			'type'    => 'text'
 		);
 		
+		$this->settings['debug_mode'] = array(
+			'section' => 'testing',
+			'title'   => __( "Debug Mode" , 'typo3-importer'),
+			'desc'	  => __( 'Bypass Ajax controller to handle news_to_import directly for testing purposes', 'typo3-importer' ),
+			'type'    => 'checkbox',
+			'std'     => 0
+		);
+		
 		// Oops...
 		$this->settings['force_private_posts'] = array(
 			'section' => 'oops',
@@ -735,6 +743,10 @@ EOD;
 		
 		// TODO validate for
 		// TYPO3 db connectivity
+
+		if ( $input['debug_mode'] && '' == $input['news_to_import'] ) {
+			add_settings_error( 't3i-options', 'news_to_import', __( 'News to Import is required' , 'typo3-importer') );
+		}
 
 		if ( '' != $input['import_limit'] ) {
 			$input['import_limit']	= intval( $input['import_limit'] );
