@@ -907,6 +907,25 @@ EOD;
 			$title				= $image->getAttribute('title');
 			$alt				= $image->getAttribute('alt');
 
+			// ignore file:// sources, they're none existant except on original 
+			// computer
+			$str_file			= 'file://';
+			// disable image
+			if ( 0 === strncasecmp( $str_file, $src, strlen( $str_file ) ) ) {
+				$dom			= new DOMDocument;
+				$node			= $dom->importNode( $image, true );
+				$dom->appendChild( $node );
+				$image_tag		= $dom->saveHTML();
+
+				$find			= trim( $image_tag );
+				$find2			= preg_replace( '#">$#', '" />', $find );
+				$replace		= str_replace( '<img', '<img style="display: none;"', $find );
+				$replace2		= str_replace( '<img', '<img style="display: none;"', $find2 );
+				$post_content	= str_ireplace( array( $find, $find2 ), array( $replace, $replace2), $post_content );
+
+				continue;
+			}
+
 			// check that src is locally referenced to post 
 			if ( preg_match( '#^(https?://[^/]+/)#i', $src, $matches ) ) {
 				if ( $matches[0] != $this->typo3_url ) {
@@ -1099,6 +1118,10 @@ EOD;
 		$content				= trim( $new_post_content );
 	
 		return $content;
+	}
+
+	function _normalize_tag( $matches ) {
+		return '<' . strtolower( $matches[1] );
 	}
 
 	function lookup_author( $author_email, $author ) {

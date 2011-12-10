@@ -137,6 +137,7 @@ Yes. Any sponsoring would be greatly welcome. Please [donate](http://typo3vagabo
 * Update TYPO3 Importer verbiage
 * Set default author
 * Enable debug mode to handle news_to_import directly for testing purposes 
+* Ignore file:// sources, they're none existant except on original computer
 -
 
 = 2.0.0 =
