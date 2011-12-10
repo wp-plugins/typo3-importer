@@ -128,6 +128,7 @@ Yes. Any sponsoring would be greatly welcome. Please [donate](http://typo3vagabo
 
 == Changelog ==
 = trunk =
+= 2.0.1 =
 * Installation directions update
 * Update for gettext and POT files
 * Revise readme description

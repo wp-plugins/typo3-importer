@@ -299,7 +299,7 @@ EOD;
 	function show_status( $count, $posts ) {
 		echo '<p>' . __( "Please be patient while news and comment records are processed. This can take a while, up to 2 minutes per individual news record to include comments and related media. Do not navigate away from this page until this script is done or the import will not be completed. You will be notified via this page when the import is completed.", 'typo3-importer' ) . '</p>';
 
-		echo '<p>' . sprintf( __( 'Estimated time required to import is %1$s minutes.', 'typo3-importer' ), ( $count * 2 ) ) . '</p>';
+		echo '<p id="time-remaining">' . sprintf( __( 'Estimated time required to import is %1$s minutes.', 'typo3-importer' ), ( $count * .33 ) ) . '</p>';
 
 		// TODO add estimated time remaining 
 
