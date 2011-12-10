@@ -2,9 +2,9 @@
 # This file is distributed under the same license as the TYPO3 Importer package.
 msgid ""
 msgstr ""
-"Project-Id-Version: TYPO3 Importer 2.0.0\n"
+"Project-Id-Version: TYPO3 Importer 2.0.1\n"
 "Report-Msgid-Bugs-To: http://wordpress.org/tag/typo3-importer\n"
-"POT-Creation-Date: 2011-12-10 17:15:39+00:00\n"
+"POT-Creation-Date: 2011-12-10 20:26:15+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -48,7 +48,7 @@ msgstr ""
 msgid "TYPO3 Importer Settings"
 msgstr ""
 
-#. #-#-#-#-#  typo3-importer.pot (TYPO3 Importer 2.0.0)  #-#-#-#-#
+#. #-#-#-#-#  typo3-importer.pot (TYPO3 Importer 2.0.1)  #-#-#-#-#
 #. Plugin Name of the plugin/theme
 #: class.options.php:58 typo3-importer.php:99 typo3-importer.php:143
 msgid "TYPO3 Importer"
@@ -512,10 +512,6 @@ msgstr ""
 
 #: class.options.php:953
 msgid "Successfully removed %s no-post attachments."
-msgstr ""
-
-#: typo3-importer.php:62
-msgid "Cheatin&#8217; uh?"
 msgstr ""
 
 #: typo3-importer.php:76

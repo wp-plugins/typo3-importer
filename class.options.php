@@ -534,7 +534,7 @@ EOD;
 		
 		$this->settings['debug_mode'] = array(
 			'section' => 'testing',
-			'title'   => __( "Debug Mode" , 'typo3-importer'),
+			'title'   => __( 'Debug Mode' , 'typo3-importer'),
 			'desc'	  => __( 'Bypass Ajax controller to handle news_to_import directly for testing purposes', 'typo3-importer' ),
 			'type'    => 'checkbox',
 			'std'     => 0
