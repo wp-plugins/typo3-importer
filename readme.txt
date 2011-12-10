@@ -135,6 +135,7 @@ Yes. Any sponsoring would be greatly welcome. Please [donate](http://typo3vagabo
 * Import meta keywords and descriptions for All in One SEO, Bizz themes, Headspace2, Thesis and Yoast's WordPress SEO
 * Update Options > Settings verbiage
 * Update TYPO3 Importer verbiage
+* Set default author
 -
 
 = 2.0.0 =

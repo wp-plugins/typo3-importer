@@ -1104,8 +1104,14 @@ EOD;
 		$author_email			= trim( $author_email );
 
 		// there's no information to create an author from
-		if ( '' == $author_email && '' == $author )
-			return false;
+		if ( '' == $author_email && '' == $author ) {
+			$default_author		= get_t3i_options( 'default_author' );
+
+			if ( $default_author )
+				return $default_author;
+			else
+				return false;
+		}
 
 		// create unique emails for no email authors
 		if ( '' != $author_email ) {

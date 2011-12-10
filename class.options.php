@@ -349,6 +349,24 @@ EOD;
 		
 		
 		// Import Settings
+		$this->settings['default_author'] = array(
+			'section' => 'general',
+			'title'   => __( 'Default Author', 'typo3-importer'),
+			'desc'    => __( 'Select incoming news author when none is provided.', 'typo3-importer'),
+			'type'    => 'select',
+			'std'     => '',
+			'choices' => array(
+				'0'	=> 'Current user',
+			)
+		);
+
+		$users					= get_users();
+		foreach( $users as $user ) {
+			$user_name			= $user->display_name;
+			$user_name			.= ' (' . $user->user_email . ')';
+			$this->settings['default_author']['choices'][ $user->ID ]	= $user_name;
+		}
+
 		$this->settings['protected_password'] = array(
 			'title'   => __( 'Protected Post Password', 'typo3-importer'),
 			'desc'    => __( 'If set, posts will require this password to be viewed.', 'typo3-importer'),
