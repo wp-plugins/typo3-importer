@@ -4,31 +4,118 @@ Donate link: http://typo3vagabond.com/about-typo3-vagabond/donate/
 Tags: typo3, importer
 Requires at least: 3.0.0
 Tested up to: 3.2.1
-Stable tag: 2.0.0
+Stable tag: 2.0.1
 
-Import tt_news and tx_comments from TYPO3 into WordPress.
+Easily import thousands of tt_news and tx_comments from TYPO3 into WordPress.
 
 == Description ==
-Importer to bring your TYPO3 news and their related media and comments into WordPress.
+TYPO3 Importer brings your TYPO3 news, related media and comments into WordPress with minimal fuss. You can be as selective or open as you'd like for selecting which tt_news records to grab. Import can be interrupted and restarted later on.
 
-Requires remote web and database access to the source TYPO3 instance. Images, files and comments related to TYPO3 tt_news entries will be pulled into WordPress as new posts.
+Inline and related images will be added to the Media Library. The first image found is optionally set as the Featured Image for the post. Inline images will have their source URLs updated. If there's more than one related image, the [gallery] shortcode is optionally inserted into the post.
 
-Comments will be automatically tested for spam via Askimet if you have it configured.
+* Requires remote web and database access to the source TYPO3 instance.
+* Comments will be tested for spam via Askimet if you have Askimet configured.
+* Files and links will be appended to post content with optional shortcode wrappers, like [member]|[/member].  
+* Post status override is possible, but hidden posts, will be set as Drafts.
+* Opps and Restore options provide quick clean up and hiding of imports.
 
-Inline and related images will be added to the Media Library. The first image found will be set as the Featured Image for the post. Inline images will have their source URLs updated. Related images will be converted to a [gallery] and appended or inserted into the post per your settings.
+= TYPO3 Importer Options =
+**TYPO3 Access**
 
-Files will be appended to post content as 'Related Files'.
+* Website URL
+* Database Host
+* Database Name
+* Database Username
+* Database Password
 
-It's possible to change post statuses on import. However, draft posts, will remain as drafts.
+**News Selection**
 
-If you import TYPO3 news and they've gone live when you didn't want them to, visit the Options screen and look for `Oops`. That's the option to convert imported posts to `Private` thereby removing them from public view.
+* News WHERE Clause
+* News ORDER Clause
+* News to Import
+* Skip Importing News
 
-Finally, it's possible to delete prior imports and lost comments and attachments.
+**Import Options**
+
+* Protected Post Password
+* Override Post Status as...?
+	* No Change
+	* Draft
+	* Publish
+	* Pending
+	* Future
+	* Private
+* Insert More Link?
+	* No
+	* After 1st paragraph
+	* After 2nd paragraph
+	* After 3rd paragraph
+	* After 4th paragraph
+	* After 5th paragraph
+	* After 6th paragraph
+	* After 7th paragraph
+	* After 8th paragraph
+	* After 9th paragraph
+	* After 10th paragraph
+* Set Featured Image?
+* Insert Gallery Shortcode?
+	* No
+	* After 1st paragraph
+	* After 2nd paragraph
+	* After 3rd paragraph
+	* After 4th paragraph
+	* After 5th paragraph
+	* After 6th paragraph
+	* After 7th paragraph
+	* After 8th paragraph
+	* After 9th paragraph
+	* After 10th paragraph
+	* After content'
+* Related Files Header
+* Related Files Header Tag
+	* None
+	* H1
+	* H2
+	* H3
+	* H4
+	* H5
+	* H6'
+* Related Files Wrap
+* Related Links Header
+* Related Links Header Tag
+	* None
+	* H1
+	* H2
+	* H3
+	* H4
+	* H5
+	* H6
+* Related Links Wrap
+* Approve Non-spam Comments?
+
+**Testing Options**
+
+* Don't Import Comments
+* Don't Import Media
+* Import Limit
+
+**Oops**
+
+* Convert Imported Posts to Private, NOW!
+
+**Reset/Restore**
+
+* Delete...
+	* Prior imports
+	* Imported comments
+	* Unattached media
+* Reset plugin
 
 == Installation ==
 1. Upload the `typo3-importer` folder to the `/wp-content/plugins/` directory
 1. Activate the plugin through the 'Plugins' menu in WordPress
-1. Go to the Tools -> Import screen, Click on TYPO3 Importer
+1. Set TYPO3 access via Settings > TYPO3 Import Options
+1. Import via Tools > TYPO3 Importer
 
 == Frequently Asked Questions ==
 = Can I sponsor importing TYPO3 pages? =
@@ -41,6 +128,9 @@ Yes. Any sponsoring would be greatly welcome. Please [donate](http://typo3vagabo
 
 == Changelog ==
 = trunk =
+* Installation directions update
+* Update for gettext and POT files
+* Revise readme description
 -
 
 = 2.0.0 =
