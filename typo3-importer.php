@@ -3,334 +3,524 @@
 Plugin Name: TYPO3 Importer
 Plugin URI: http://wordpress.org/extend/plugins/typo3-importer/
 Description: Import tt_news and tx_comments from TYPO3 into WordPress.
-Version: 1.0.3
+Version: 2.0.0
 Author: Michael Cannon
 Author URI: http://typo3vagabond.com/contact-typo3vagabond/
 License: GPL2
+
+Copyright 2011  Michael Cannon  (email : michael@typo3vagabond.com)
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License, version 2, as 
+published by the Free Software Foundation.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
-/*  Copyright 2011  Michael Cannon  (email : michael@typo3vagabond.com)
- 
-	This program is free software; you can redistribute it and/or modify
-	it under the terms of the GNU General Public License, version 2, as 
-	published by the Free Software Foundation.
 
-	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	GNU General Public License for more details.
 
-	You should have received a copy of the GNU General Public License
-	along with this program; if not, write to the Free Software
-	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-*/
-
+// Load dependencies
 // TYPO3 includes for helping parse typolink tags
 include_once( 'lib/class.t3lib_div.php' );
 include_once( 'lib/class.t3lib_parsehtml.php' );
 include_once( 'lib/class.t3lib_softrefproc.php' );
+require_once( 'class.options.php' );
+require_once( 'screen-meta-links.php' );
 
-function typo3_import_ajax_handler() {
-	global $TYPO3_Importer;
-
-	check_ajax_referer( 'typo3-import' );
-	if ( !current_user_can( 'publish_posts' ) )
-		die( __LINE__ );
-	if ( empty( $_POST['step'] ) )
-		die( __LINE__ );
-	define('WP_IMPORTING', true);
-	$result						= $TYPO3_Importer->{ 'step' . ( (int) $_POST['step'] ) }();
-	if ( is_wp_error( $result ) )
-		echo $result->get_error_message();
-	die;
-}
-
-add_action( 'wp_ajax_typo3_importer', 'typo3_import_ajax_handler' );
-
-// TODO figure out why this is here
-if ( false && ! defined( 'WP_LOAD_IMPORTERS' ) && ! defined( 'DOING_AJAX' ) )
-	return;
-
-// Load Importer API
-require_once( ABSPATH . 'wp-admin/includes/import.php' );
-
-if ( ! class_exists( 'WP_Importer' ) ) {
-	$class_wp_importer = ABSPATH . 'wp-admin/includes/class-wp-importer.php';
-	if ( file_exists( $class_wp_importer ) )
-		require_once $class_wp_importer;
-}
-
-if ( ! class_exists( 'WP_Importer' ) ) {
-	die( __( 'WP_Importer not found', 'typo3-importer' ) );
-}
 
 /**
  * TYPO3 Importer
  *
  * @package typo3-importer
- * @subpackage Importer
  */
-class TYPO3_Importer extends WP_Importer {
-	var $wpdb					= null;
-	var $typo3_url				= null;
+class TYPO3_Importer {
+	var $errors					= array();
+	var $menu_id;
+	var $newline_typo3			= "\r\n";
+	var $newline_wp				= "\n\n";
+	var $post_status_options	= array( 'draft', 'publish', 'pending', 'future', 'private' );
+	var $postmap				= array();
 	var $t3db					= null;
 	var $t3db_host				= null;
 	var $t3db_name				= null;
-	var $t3db_username			= null;
 	var $t3db_password			= null;
-	var $postmap;
-	var $commentmap;
-	var $newline_typo3			= "\r\n";
-	var $newline_wp				= "\n\n";
-	var $inital_lastsync			= '1900-01-01 00:00:00';
-	var $featured_image_id		= false;
+	var $t3db_username			= null;
+	var $typo3_url				= null;
+	var $wpdb					= null;
 
-	// pid > 0 need for excluding versioned tt_news entries
-	var $typo3_news_where		= ' AND n.deleted = 0 AND n.pid > 0';
-	var $typo3_news_order		= ' ORDER BY n.uid ASC ';
-	var $typo3_comments_where	= ' AND c.external_prefix LIKE "tx_ttnews" AND c.deleted = 0 AND c.hidden = 0';
-	var $typo3_comments_order	= ' ORDER BY c.uid ASC ';
-	// batch limit to help prevent expiring connection
-	var $batch_limit_news		= 5;
-	var $batch_limit_comments	= 50;
-	var $import_limit			= 0;
-	var $import_types			= array( 'news', 'comments' );
-	var $post_status_options	= array( 'draft', 'publish', 'pending', 'future', 'private' );
-
+	// Plugin initialization
 	function TYPO3_Importer() {
+
+		// Capability check
+		if ( !current_user_can( 'manage_options' ) )
+			wp_die( __( 'Cheatin&#8217; uh?' , 'typo3-importer') );
+
+		if ( ! function_exists( 'admin_url' ) )
+			return false;
+
+		// Load up the localization file if we're using WordPress in a different language
+		// Place it in this plugin's "localization" folder and name it "typo3-importer-[value in wp-config].mo"
 		load_plugin_textdomain( 'typo3-importer', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 
-		 add_filter( 'plugin_action_links', array( &$this, 'add_plugin_action_links' ), 10, 2 );
+		add_action( 'admin_menu', array( &$this, 'add_admin_menu' ) );
+		add_action( 'admin_enqueue_scripts', array( &$this, 'admin_enqueues' ) );
+		add_action( 'wp_ajax_importtypo3news', array( &$this, 'ajax_process_news' ) );
+		add_filter( 'plugin_action_links', array( &$this, 'add_plugin_action_links' ), 10, 2 );
 		
-		register_importer( 'typo3-importer', __( 'TYPO3 Importer', 'typo3-importer'), __( 'Import tt_news and tx_comments from TYPO3.', 'typo3-importer'), array( $this, 'dispatch' ) );
+		$this->options_link		= '<a href="'.get_admin_url().'options-general.php?page=t3i-options">'.__('TYPO3 Import Options', 'typo3-importer').'</a>';
+        
+		$this->_create_db_client();
+		$this->_get_custom_sql();
+		$this->no_media_import	= get_t3i_options( 'no_media_import' );
 	}
 
-	function header() {
-		echo '<div class="wrap">';
-		screen_icon();
-		echo '<h2>' . __( 'TYPO3 Importer', 'typo3-importer') . '</h2>';
+
+	// Display a Options link on the main Plugins page
+	function add_plugin_action_links( $links, $file ) {
+		if ( $file == plugin_basename( __FILE__ ) ) {
+			array_unshift( $links, $this->options_link );
+
+			$link				= '<a href="'.get_admin_url().'tools.php?page=typo3-importer">'.__('Import', 'typo3-importer').'</a>';
+			array_unshift( $links, $link );
+		}
+
+		return $links;
 	}
 
-	function footer() {
+
+	// Register the management page
+	function add_admin_menu() {
+		$this->menu_id = add_management_page( __( 'TYPO3 Importer', 'typo3-importer' ), __( 'TYPO3 Importer', 'typo3-importer' ), 'manage_options', 'typo3-importer', array(&$this, 'user_interface') );
+
+		add_action( 'admin_print_styles-' . $this->menu_id, array( &$this, 'styles' ) );
+        add_screen_meta_link(
+        	't3i-options-link',
+			__('TYPO3 Importer Options', 'typo3-importer'),
+			admin_url('options-general.php?page=t3i-options'),
+			$this->menu_id,
+			array('style' => 'font-weight: bold;')
+		);
+	}
+
+	public function styles() {
+		
+		wp_register_style( 't3i-admin', plugins_url( 'settings.css', __FILE__ ) );
+		wp_enqueue_style( 't3i-admin' );
+		
+	}
+	
+	// Enqueue the needed Javascript and CSS
+	function admin_enqueues( $hook_suffix ) {
+		if ( $hook_suffix != $this->menu_id )
+			return;
+
+		// WordPress 3.1 vs older version compatibility
+		if ( wp_script_is( 'jquery-ui-widget', 'registered' ) )
+			wp_enqueue_script( 'jquery-ui-progressbar', plugins_url( 'jquery-ui/jquery.ui.progressbar.min.js', __FILE__ ), array( 'jquery-ui-core', 'jquery-ui-widget' ), '1.8.6' );
+		else
+			wp_enqueue_script( 'jquery-ui-progressbar', plugins_url( 'jquery-ui/jquery.ui.progressbar.min.1.7.2.js', __FILE__ ), array( 'jquery-ui-core' ), '1.7.2' );
+
+		wp_enqueue_style( 'jquery-ui-t3iposts', plugins_url( 'jquery-ui/redmond/jquery-ui-1.7.2.custom.css', __FILE__ ), array(), '1.7.2' );
+	}
+
+
+	// The user interface plus thumbnail regenerator
+	function user_interface() {
+
+		echo <<<EOD
+<div id="message" class="updated fade" style="display:none"></div>
+
+<div class="wrap t3iposts">
+	<div class="icon32" id="icon-tools"></div>
+	<h2>
+EOD;
+	_e('TYPO3 Importer', 'typo3-importer');
+	echo '</h2>';
+
+		// testing helper
+		if ( isset( $_REQUEST['importtypo3news'] ) && $_REQUEST['importtypo3news'] ) {
+			$this->ajax_process_news();
+		}
+
+		// If the button was clicked
+		if ( ! empty( $_POST['typo3-importer'] ) || ! empty( $_REQUEST['posts'] ) ) {
+
+			// Form nonce check
+			check_admin_referer( 'typo3-importer' );
+
+			// check that TYPO3 login information is valid
+			if ( $this->check_typo3_access() ) {
+				// Create the list of image IDs
+				if ( ! empty( $_REQUEST['posts'] ) ) {
+					$posts			= array_map( 'intval', explode( ',', trim( $_REQUEST['posts'], ',' ) ) );
+					$count			= count( $posts );
+					$posts			= implode( ',', $posts );
+				} else {
+					$query			= "
+						SELECT uid
+						FROM tt_news
+						WHERE 1 = 1
+							{$this->news_custom_where}
+						{$this->news_custom_order}
+					";
+
+					$limit			= (int) get_t3i_options( 'import_limit' );
+					if ( $limit )
+						$query		.= ' LIMIT ' . $limit;
+
+					$results		= $this->t3db->get_results( $query );
+					$count			= 0;
+
+					// Generate the list of IDs
+					$posts			= array();
+					foreach ( $results as $post ) {
+						$posts[]	= $post->uid;
+						$count++;
+					}
+
+					if ( ! $count ) {
+						echo '	<p>' . _e( 'All done. No further news or comment records to import.', 'typo3-importer' ) . "</p></div>";
+						return;
+					}
+
+					$posts			= implode( ',', $posts );
+				}
+
+				$this->show_status( $count, $posts );
+			} else {
+				$this->show_errors();
+			}
+		} else {
+			// No button click? Display the form.
+			$this->show_greeting();
+		}
+		
 		echo '</div>';
 	}
 
-	function greet() {
-		?>
-		<div class="narrow">
-		<form action="admin.php?import=typo3-importer" method="post">
-		<?php wp_nonce_field( 'typo3-import' ) ?>
-		<?php if ( get_option( 't3db_host' )
-			&& get_option( 'typo3_url' )
-			&& get_option( 't3db_name' )
-			&& get_option( 't3db_username' )
-			&& get_option( 't3db_password' )
-			&& get_option( 't3api_step' )
-		) : ?>
-			<input type="hidden" name="step" value="<?php echo get_option( 't3api_step' ); ?>" />
-			<p><?php _e( 'It looks like you attempted to import your TYPO3 posts previously and got interrupted.', 'typo3-importer') ?></p>
-			<p class="submit">
-				<input type="submit" class="button" value="<?php esc_attr_e( 'Continue previous import', 'typo3-importer') ?>" />
-			</p>
-			<p class="submitbox"><a href="<?php echo esc_url($_SERVER['PHP_SELF'] . '?import=typo3-importer&amp;step=-1&amp;_wpnonce=' . wp_create_nonce( 'typo3-import' ) . '&amp;_wp_http_referer=' . esc_attr( $_SERVER['REQUEST_URI'] )) ?>" class="deletion submitdelete"><?php _e( 'Cancel &amp; start a new import', 'typo3-importer') ?></a></p>
-			<p>
-		<?php else : ?>
-			<input type="hidden" name="step" value="1" />
-			<input type="hidden" name="login" value="true" />
-			<p><?php _e( 'Howdy! This importer allows you to connect directly to a TYPO3 website and download all of your tt_news and tx_comments records.', 'typo3-importer') ?></p>
-
-			<h3><?php _e( 'TYPO3 Website Access', 'typo3-importer'); ?></h3>
-			<table class="form-table">
-				<tr>
-					<th scope="row"><label for="typo3_url"><?php _e( 'Website URL', 'typo3-importer') ?></label></th>
-					<td><input type="text" name="typo3_url" id="typo3_url" class="regular-text" value="<?php echo get_option( 'typo3_url' ); ?>" /></td>
-				</tr>
-				<tr>
-					<th scope="row"><label for="t3db_host"><?php _e( 'Database Host', 'typo3-importer') ?></label></th>
-					<td><input type="text" name="t3db_host" id="t3db_host" class="regular-text" value="<?php echo get_option( 't3db_host' ); ?>" /></td>
-				</tr>
-				<tr>
-					<th scope="row"><label for="t3db_name"><?php _e( 'Database Name', 'typo3-importer') ?></label></th>
-					<td><input type="text" name="t3db_name" id="t3db_name" class="regular-text" value="<?php echo get_option( 't3db_name' ); ?>" /></td>
-				</tr>
-				<tr>
-					<th scope="row"><label for="t3db_username"><?php _e( 'Database Username', 'typo3-importer') ?></label></th>
-					<td><input type="text" name="t3db_username" id="t3db_username" class="regular-text" value="<?php echo get_option( 't3db_username' ); ?>" /></td>
-				</tr>
-				<tr>
-					<th scope="row"><label for="t3db_password"><?php _e( 'Database Password', 'typo3-importer') ?></label></th>
-					<td><input type="password" name="t3db_password" id="t3db_password" class="regular-text" value="<?php echo get_option( 't3db_password' ); ?>" /></td>
-				</tr>
-			</table>
-
-			<h3><?php _e( 'Import Options', 'typo3-importer'); ?></h3>
-			<table class="form-table">
-				<tr>
-					<th scope="row"><label for="protected_password"><?php _e( 'Protected Post Password', 'typo3-importer') ?></label></th>
-					<td><input type="text" name="protected_password" id="protected_password" class="regular-text" value="<?php echo get_option( 't3api_protected_password' ); ?>" /></td>
-				</tr>
-				<tr>
-					<th scope="row"><?php _e( 'Set Post Status as...?', 'typo3-importer') ?></th>
-					<td>
-					<?php
-						$checked_force_post_status	= get_option( 't3api_force_post_status', 'normal' );
-
-						$status_options		=  $this->post_status_options;
-						array_unshift( $status_options, 'default' );
-
-						foreach ( $status_options as $status ) {
-							$checked	= ( $status == $checked_force_post_status ) ? 'checked="checked"' : '';
-					?>
-							<input type="radio" name="force_post_status" value="<?php echo $status; ?>" id="force_post_status_<?php echo $status; ?>" class="regular-text" <?php echo $checked; ?> />
-							<label for="force_post_status_<?php echo $status; ?>"><?php printf( __( '%s', 'typo3-importer'), ucfirst( $status ) ); ?></label>
-					<?php } ?>
-					</td>
-				</tr>
-				<tr>
-					<th scope="row"><label for="insert_more_link"><?php _e( 'Insert More Link? (0 for no or insert at X paragraphs)', 'typo3-importer') ?></label></th>
-					<td><input type="text" name="insert_more_link" id="insert_more_link" class="regular-text" value="<?php echo get_option( 't3api_insert_more_link', 0 ); ?>" /></td>
-				</tr>
-				<tr>
-					<th scope="row"><label for="set_featured_image"><?php _e( 'Set Featured Image?', 'typo3-importer') ?></label></th>
-					<?php
-						$checked_set_featured_image	= get_option( 't3api_set_featured_image', 1 ) ? 'checked="checked"' : '';
-					?>
-					<td><input type="checkbox" name="set_featured_image" value="1" id="set_featured_image" class="regular-text" <?php echo $checked_set_featured_image; ?> /></td>
-				</tr>
-				<tr>
-					<th scope="row"><label for="insert_gallery_shortcut"><?php _e( 'Insert Gallery Shortcode? (0 for no, -1 for append, or insert at X paragraphs)', 'typo3-importer') ?></label></th>
-					<td><input type="text" name="insert_gallery_shortcut" id="insert_gallery_shortcut" class="regular-text" value="<?php echo get_option( 't3api_insert_gallery_shortcut', 0 ); ?>" /></td>
-				</tr>
-				<tr>
-					<th scope="row"><label for="approve_comments"><?php _e( 'Approve Non-spam Comments?', 'typo3-importer') ?></label></th>
-					<?php
-						$checked_approve_comments	= get_option( 't3api_approve_comments', 1 ) ? 'checked="checked"' : '';
-					?>
-					<td><input type="checkbox" name="approve_comments" value="1" id="approve_comments" class="regular-text" <?php echo $checked_approve_comments; ?> /></td>
-				</tr>
-			</table>
-
-			<h3><?php _e( 'Testing Options', 'typo3-importer'); ?></h3>
-			<table class="form-table">
-				<tr>
-					<th scope="row"><label for="no_comments_import"><?php _e( "Don't Import Comments", 'typo3-importer') ?></label></th>
-					<?php
-						$checked_no_comments	= get_option( 't3api_no_comments_import', 0 ) ? 'checked="checked"' : '';
-					?>
-					<td><input type="checkbox" name="no_comments_import" value="1" id="no_comments_import" class="regular-text" <?php echo $checked_no_comments; ?> /></td>
-				</tr>
-				<tr>
-					<th scope="row"><label for="no_media_import"><?php _e( "Don't Import Media", 'typo3-importer') ?></label></th>
-					<?php
-						$checked_no_media	= get_option( 't3api_no_media_import', 0 ) ? 'checked="checked"' : '';
-					?>
-					<td><input type="checkbox" name="no_media_import" value="1" id="no_media_import" class="regular-text" <?php echo $checked_no_media; ?> /></td>
-				</tr>
-			</table>
-			<table class="form-table">
-				<tr>
-					<th scope="row"><label for="import_limit"><?php _e( 'Import Limit (0 for all)', 'typo3-importer') ?></label></th>
-					<td><input type="text" name="import_limit" id="import_limit" class="regular-text" value="<?php echo get_option( 't3api_import_limit', 0 ); ?>" /></td>
-				</tr>
-			</table>
-
-			<h3><?php _e( 'Oops...', 'typo3-importer'); ?></h3>
-			<table class="form-table">
-				<tr>
-					<th scope="row"><label for="force_private_posts"><?php _e( 'Imported Posts to Private, NOW!', 'typo3-importer') ?></label></th>
-					<td><input type="checkbox" name="step" value="-5" id="force_private_posts" class="regular-text" /></td>
-				</tr>
-			</table>
-
-			<h3><?php _e( 'Delete Prior Imports', 'typo3-importer'); ?></h3>
-			<p><?php _e( "This will remove ALL post imports with the 't3:tt_news.uid' meta key. Post media and comments will also be deleted." , 'typo3-importer') ?></p>
-			<table class="form-table">
-				<tr>
-					<th scope="row"><label for="delete_import"><?php _e( 'Delete Imported Posts', 'typo3-importer') ?></label></th>
-					<td><input type="checkbox" name="step" value="-2" id="delete_import" class="regular-text" /></td>
-				</tr>
-			</table>
-			<p><?php _e( "This will remove ALL comments imports with the 't3:tx_comments' comment_agent key." , 'typo3-importer') ?></p>
-			<table class="form-table">
-				<tr>
-					<th scope="row"><label for="delete_import"><?php _e( 'Delete Imported Comments', 'typo3-importer') ?></label></th>
-					<td><input type="checkbox" name="step" value="-3" id="delete_comments" class="regular-text" /></td>
-				</tr>
-			</table>
-			<p><?php _e( "This will remove ALL media without a related post. It's possible for non-imported media to be deleted." , 'typo3-importer') ?></p>
-			<table class="form-table">
-				<tr>
-					<th scope="row"><label for="delete_import"><?php _e( 'Delete Unattached Media', 'typo3-importer') ?></label></th>
-					<td><input type="checkbox" name="step" value="-4" id="delete_attachment" class="regular-text" /></td>
-				</tr>
-			</table>
-
-			<h3><?php _e( 'Check Access and Start Import', 'typo3-importer'); ?></h3>
-			<p class="submit">
-				<input type="submit" class="button" value="<?php esc_attr_e( 'Connect to TYPO3 and Import', 'typo3-importer') ?>" />
-			</p>
-			<p><?php _e( "This can take a really long time if you have a lot of news in your TYPO3 system or a lot of comments. Ideally, you should only start this process if you can leave your computer alone while it finishes the import." , 'typo3-importer') ?></p>
-			<p><?php _e( '<strong>NOTE:</strong> If the import process is interrupted for <em>any</em> reason, come back to this page and it will continue from where it stopped automatically.', 'typo3-importer') ?></p>
-			<noscript>
-				<p><?php _e( '<strong>NOTE:</strong> You appear to have JavaScript disabled, so you will need to manually click through each step of this importer. If you enable JavaScript, it will step through automatically.', 'typo3-importer') ?></p>
-			</noscript>
-			<hr />
-			<p>TYPO3 Importer by <a href="mailto:michael@typo3vagabond.com">Michael Cannon</a> of <a href="http://typo3vagabond.com">TYPO3Vagabond.com</a>.</p>
-		<?php endif; ?>
-		</form>
-		</div>
-		<?php
-	}
-
-	function get_meta( $type ) {
-		$metalist				= $this->typo3_api( 'meta_' . $type );
-
-		if ( is_wp_error( $metalist ) )
-			return $metalist;
-
-		$total					= $metalist['total'];
-
-		// all post meta is cached locally
-		unset( $metalist );
-		update_option( 't3api_total_' . $type, $total );
-
-		echo '<p>' . sprintf( __( 'Meta data for %s has been downloaded, continuing with import.', 'typo3-importer'), $type ) . '</p>';
-	}
-
-	function get_data( $type ) {
-		$sync_count				= (int) get_option( 't3api_sync_count_' . $type );
-		if ( ! $sync_count )
-			update_option( 't3api_sync_count_' . $type, 0 );
-
-		echo '<ol style="counter-reset: item ' . $sync_count . '">';
-
-		// Get the batch of items that match up with the meta_$type list
-		$itemlist				= $this->typo3_api( 'data_' . $type );
-
-		if ( is_wp_error( $itemlist ) )
-			return $itemlist;
-
-		foreach( $itemlist['entries'] as $entry ) {
-			switch ( $type ) {
-				case 'news':
-					$inserted 	= $this->import_post( $entry );
-					wp_cache_flush();
-					break;
-				case 'comments':
-					$inserted	= $this->import_comment( $entry );
-					clean_comment_cache( $inserted );
-					break;
-			}
-
-			if ( is_wp_error( $inserted ) )
-				return $inserted;
-
-			$sync_count++;
+	// t3db is the database connection
+	// for TYPO3 there's no API
+	// only database and url requests
+	// should be used for db connection and establishing valid website url
+	function _create_db_client() {
+		if ( null === $this->wpdb ) {
+			global $wpdb;
+			$this->wpdb			= $wpdb;
 		}
 
-		// how far along in the import
-		update_option( 't3api_sync_count_' . $type, $sync_count );
+		if ( $this->t3db ) return;
 
-		echo '</ol>';
+		if ( is_null( $this->t3db_host ) ) {
+			$this->typo3_url	 	= get_t3i_options( 'typo3_url' );
+			$this->t3db_host		= get_t3i_options( 't3db_host' );
+			$this->t3db_name		= get_t3i_options( 't3db_name' );
+			$this->t3db_username	= get_t3i_options( 't3db_username' );
+			$this->t3db_password	= get_t3i_options( 't3db_password' );
+		}
+
+		$this->t3db				= new wpdb($this->t3db_username, $this->t3db_password, $this->t3db_name, $this->t3db_host);
+	}
+
+	function _get_custom_sql() {
+		$this->news_custom_where	= get_t3i_options( 'news_custom_where' );
+		$this->news_custom_order	= get_t3i_options( 'news_custom_order' );
+
+		$this->news_to_import		= get_t3i_options( 'news_to_import' );
+		if ( '' == $this->news_to_import ) {
+			// poll already imported and skip those
+			$done_uids			= $this->wpdb->get_col( "SELECT meta_value FROM {$this->wpdb->postmeta} WHERE meta_key = 't3:tt_news.uid'" );
+
+			if ( count( $done_uids ) ) {
+				$done_uids		= array_unique( $done_uids );
+				$this->news_custom_where	.= " AND tt_news.uid NOT IN ( " . implode( ',', $done_uids ) . " ) ";
+			}
+		} else {
+			$this->news_custom_where	= " AND tt_news.uid IN ( " . $this->news_to_import . " ) ";
+		}
+
+		$this->news_to_skip			= get_t3i_options( 'news_to_skip' );
+		if ( '' != $this->news_to_skip ) {
+			$this->news_custom_where	.= " AND tt_news.uid NOT IN ( " . $this->news_to_skip . " ) ";
+		}
+	}
+
+	function check_typo3_access() {
+		// TODO set checked okay bit via options setter so we don't have to 
+		// repeat checks here
+
+		if ( ! $this->typo3_url ) {
+			$this->errors[] 			= __( "TYPO3 website URL is missing", 'typo3-importer' );
+		}
+
+		if ( ! $this->t3db_host ) {
+			$this->errors[] 			= __( "TYPO3 database host is missing", 'typo3-importer' );
+		}
+
+		if ( ! $this->t3db_name ) {
+			$this->errors[] 			= __( "TYPO3 database name is missing", 'typo3-importer' );
+		}
+
+		if ( ! $this->t3db_username ) {
+			$this->errors[] 			= __( "TYPO3 database username is missing", 'typo3-importer' );
+		}
+
+		if ( ! $this->t3db_password ) {
+			$this->errors[] 			= __( "TYPO3 database password is missing", 'typo3-importer' );
+		}
+	
+		// TODO check for DB access
+
+		if ( ! count( $this->errors ) ) {
+			return true;
+		}
+
+		return false;
+	}
+
+	function show_errors() {
+		echo '<h3>';
+		_e( 'Errors found, see below' );
+		echo '</h3>';
+		echo '<ul class="error">';
+		foreach ( $this->errors as $key => $error ) {
+			echo '<li>' . $error . '</li>';
+		}
+		echo '</ul>';
+		echo '<p>' . sprintf( __( 'Please review your %s before proceeding.', 'typo3-importer' ), $this->options_link ) . '</p>';
+	}
+
+
+	function show_status( $count, $posts ) {
+		echo '<p>' . __( "Please be patient while news and comment records are processed. This can take a while, up to 2 minutes per individual news record to include comments and related media. Do not navigate away from this page until this script is done or the import will not be completed. You will be notified via this page when the import is completed.", 'typo3-importer' ) . '</p>';
+
+		echo '<p>' . sprintf( __( 'Estimated time required to import is %1$s minutes.', 'typo3-importer' ), ( $count * 2 ) ) . '</p>';
+
+		// TODO add estimated time remaining 
+
+		$text_goback = ( ! empty( $_GET['goback'] ) ) ? sprintf( __( 'To go back to the previous page, <a href="%s">click here</a>.', 'typo3-importer' ), 'javascript:history.go(-1)' ) : '';
+
+		$text_failures = sprintf( __( 'All done! %1$s tt_news records were successfully processed in %2$s seconds and there were %3$s failure(s). To try importing the failed records again, <a href="%4$s">click here</a>. %5$s', 'typo3-importer' ), "' + rt_successes + '", "' + rt_totaltime + '", "' + rt_errors + '", esc_url( wp_nonce_url( admin_url( 'tools.php?page=typo3-importer&goback=1' ), 'typo3-importer' ) . '&posts=' ) . "' + rt_failedlist + '", $text_goback );
+
+		$text_nofailures = sprintf( __( 'All done! %1$s tt_news records were successfully processed in %2$s seconds and there were no failures. %3$s', 'typo3-importer' ), "' + rt_successes + '", "' + rt_totaltime + '", $text_goback );
+?>
+
+	<noscript><p><em><?php _e( 'You must enable Javascript in order to proceed!', 'typo3-importer' ) ?></em></p></noscript>
+
+	<div id="t3iposts-bar" style="position:relative;height:25px;">
+		<div id="t3iposts-bar-percent" style="position:absolute;left:50%;top:50%;width:300px;margin-left:-150px;height:25px;margin-top:-9px;font-weight:bold;text-align:center;"></div>
+	</div>
+
+	<p><input type="button" class="button hide-if-no-js" name="t3iposts-stop" id="t3iposts-stop" value="<?php _e( 'Abort Importing TYPO3 News and Comments', 'typo3-importer' ) ?>" /></p>
+
+	<h3 class="title"><?php _e( 'Debugging Information', 'typo3-importer' ) ?></h3>
+
+	<p>
+		<?php printf( __( 'Total news records: %s', 'typo3-importer' ), $count ); ?><br />
+		<?php printf( __( 'News Records Imported: %s', 'typo3-importer' ), '<span id="t3iposts-debug-successcount">0</span>' ); ?><br />
+		<?php printf( __( 'Import Failures: %s', 'typo3-importer' ), '<span id="t3iposts-debug-failurecount">0</span>' ); ?>
+	</p>
+
+	<ol id="t3iposts-debuglist">
+		<li style="display:none"></li>
+	</ol>
+
+	<script type="text/javascript">
+	// <![CDATA[
+		jQuery(document).ready(function($){
+			var i;
+			var rt_posts = [<?php echo $posts; ?>];
+			var rt_total = rt_posts.length;
+			var rt_count = 1;
+			var rt_percent = 0;
+			var rt_successes = 0;
+			var rt_errors = 0;
+			var rt_failedlist = '';
+			var rt_resulttext = '';
+			var rt_timestart = new Date().getTime();
+			var rt_timeend = 0;
+			var rt_totaltime = 0;
+			var rt_continue = true;
+
+			// Create the progress bar
+			$("#t3iposts-bar").progressbar();
+			$("#t3iposts-bar-percent").html( "0%" );
+
+			// Stop button
+			$("#t3iposts-stop").click(function() {
+				rt_continue = false;
+				$('#t3iposts-stop').val("<?php echo $this->esc_quotes( __( 'Stopping, please wait a moment.', 'typo3-importer' ) ); ?>");
+			});
+
+			// Clear out the empty list element that's there for HTML validation purposes
+			$("#t3iposts-debuglist li").remove();
+
+			// Called after each import. Updates debug information and the progress bar.
+			function T3IPostsUpdateStatus( id, success, response ) {
+				$("#t3iposts-bar").progressbar( "value", ( rt_count / rt_total ) * 100 );
+				$("#t3iposts-bar-percent").html( Math.round( ( rt_count / rt_total ) * 1000 ) / 10 + "%" );
+				rt_count = rt_count + 1;
+
+				if ( success ) {
+					rt_successes = rt_successes + 1;
+					$("#t3iposts-debug-successcount").html(rt_successes);
+					$("#t3iposts-debuglist").append("<li>" + response.success + "</li>");
+				}
+				else {
+					rt_errors = rt_errors + 1;
+					rt_failedlist = rt_failedlist + ',' + id;
+					$("#t3iposts-debug-failurecount").html(rt_errors);
+					$("#t3iposts-debuglist").append("<li>" + response.error + "</li>");
+				}
+			}
+
+			// Called when all posts have been processed. Shows the results and cleans up.
+			function T3IPostsFinishUp() {
+				rt_timeend = new Date().getTime();
+				rt_totaltime = Math.round( ( rt_timeend - rt_timestart ) / 1000 );
+
+				$('#t3iposts-stop').hide();
+
+				if ( rt_errors > 0 ) {
+					rt_resulttext = '<?php echo $text_failures; ?>';
+				} else {
+					rt_resulttext = '<?php echo $text_nofailures; ?>';
+				}
+
+				$("#message").html("<p><strong>" + rt_resulttext + "</strong></p>");
+				$("#message").show();
+			}
+
+			// Regenerate a specified image via AJAX
+			function T3IPosts( id ) {
+				$.ajax({
+					type: 'POST',
+					url: ajaxurl,
+					data: { action: "importtypo3news", id: id },
+					success: function( response ) {
+						if ( response.success ) {
+							T3IPostsUpdateStatus( id, true, response );
+						}
+						else {
+							T3IPostsUpdateStatus( id, false, response );
+						}
+
+						if ( rt_posts.length && rt_continue ) {
+							T3IPosts( rt_posts.shift() );
+						}
+						else {
+							T3IPostsFinishUp();
+						}
+					},
+					error: function( response ) {
+						T3IPostsUpdateStatus( id, false, response );
+
+						if ( rt_posts.length && rt_continue ) {
+							T3IPosts( rt_posts.shift() );
+						} 
+						else {
+							T3IPostsFinishUp();
+						}
+					}
+				});
+			}
+
+			T3IPosts( rt_posts.shift() );
+		});
+	// ]]>
+	</script>
+<?php
+	}
+
+
+	function show_greeting() {
+?>
+	<form method="post" action="">
+<?php wp_nonce_field('typo3-importer') ?>
+
+	<p><?php _e( "Use this tool to import tt_news and tx_comments records from TYPO3 into WordPress.", 'typo3-importer' ); ?></p>
+
+	<p><?php _e( "Requires remote web and database access to the source TYPO3 instance. Images, files and comments related to TYPO3 tt_news entries will be pulled into WordPress as new posts.", 'typo3-importer' ); ?></p>
+
+	<p><?php _e( "Comments will be automatically tested for spam via Askimet if you have it configured.", 'typo3-importer' ); ?></p>
+
+	<p><?php _e( "Inline and related images will be added to the Media Library. The first image found will be set as the Featured Image for the post. Inline images will have their source URLs updated. Related images will be converted to a [gallery] and appended or inserted into the post per your settings.", 'typo3-importer' ); ?></p>
+
+	<p><?php _e( "Files will be appended to post content as 'Related Files'.", 'typo3-importer' ); ?></p>
+
+	<p><?php _e( "It's possible to change post statuses on import. However, draft posts, will remain as drafts.", 'typo3-importer' ); ?></p>
+
+	<p><?php _e( "If you import TYPO3 news and they've gone live when you didn't want them to, visit the Options screen and look for `Oops`. That's the option to convert imported posts to `Private` thereby removing them from public view.", 'typo3-importer' ); ?></p>
+
+	<p><?php _e( "Finally, it's possible to delete prior imports and lost comments and attachments.", 'typo3-importer' ); ?></p>
+
+	<p><?php printf( __( 'Please review your %s before proceeding.', 'typo3-importer' ), $this->options_link ); ?></p>
+
+	<p><?php _e( 'To begin, click the button below.', 'typo3-importer ', 'typo3-importer'); ?></p>
+
+	<p><input type="submit" class="button hide-if-no-js" name="typo3-importer" id="typo3-importer" value="<?php _e( 'Import TYPO3 News & Comments', 'typo3-importer' ) ?>" /></p>
+
+	<noscript><p><em><?php _e( 'You must enable Javascript in order to proceed!', 'typo3-importer' ) ?></em></p></noscript>
+
+	</form>
+<?php
+		$copyright				= '<div class="copyright">Copyright %s <a href="http://typo3vagabond.com">TYPO3Vagabond.com.</a></div>';
+		$copyright				= sprintf( $copyright, date( 'Y' ) );
+		echo $copyright;
+	}
+
+
+	// Process a single image ID (this is an AJAX handler)
+	function ajax_process_news() {
+		error_reporting( 0 ); // Don't break the JSON result
+		header( 'Content-type: application/json' );
+
+		$this->news_uid			= (int) $_REQUEST['id'];
+
+		// grab the record from TYPO3
+		$news					= $this->get_news( $this->news_uid );
+
+		if ( ! is_array( $news ) || 1 > count( $news ) || $news['itemid'] != $this->news_uid )
+			die( json_encode( array( 'error' => sprintf( __( "Failed import: %s isn't a TYPO3 news record.", 'typo3-importer' ), esc_html( $_REQUEST['id'] ) ) ) ) );
+
+		// TODO progress by post
+
+		// process and import news post
+		$post_id 				= $this->import_news_as_post( $news );
+
+		$this->featured_image_id	= false;
+
+		// replace original external images with internal
+		$this->_typo3_replace_images( $post_id );
+
+		// Handle all the metadata for this post
+		$this->insert_postmeta( $post_id, $news );
+
+		if ( get_t3i_options( 'set_featured_image' ) && $this->featured_image_id ) {
+			update_post_meta( $post_id, "_thumbnail_id", $this->featured_image_id );
+		}
+
+		if ( ! get_t3i_options( 'no_comments_import' ) ) {
+			$this->process_comments();
+		}
+
+		die( json_encode( array( 'success' => sprintf( __( '&quot;<a href="%1$s" target="_blank">%2$s</a>&quot; Post ID %3$s was successfully processed in %4$s seconds.', 'typo3-importer' ), get_permalink( $post_id ), esc_html( get_the_title( $post_id ) ), $post_id, timer_stop() ) ) ) );
+	}
+
+	function process_comments() {
+		$comments				= $this->get_comments();
+
+		if ( ! count( $comments ) )
+			return;
+
+		foreach ( $comments as $comment ) {
+			$inserted			= $this->import_comment( $comment );
+		}
 	}
 
 	function import_comment( $comment_arr ) {
@@ -351,7 +541,7 @@ class TYPO3_Importer extends WP_Importer {
 		}
 
 		// auto approve imported comments
-		if ( $this->approve_comments && $approved !== 'spam' ) {
+		if ( get_t3i_options('approve_comments') && $approved !== 'spam' ) {
 			$approved			= 1;
 		}
 
@@ -370,122 +560,147 @@ class TYPO3_Importer extends WP_Importer {
 		";
 		$comment_ID				= $this->wpdb->get_var($dupe);
 
-		echo '<li>';
+		// echo '<li>';
 
 		if ( ! $comment_ID ) {
-			printf( __( 'Imported comment from <strong>%s</strong>', 'typo3-importer'), stripslashes( $comment['comment_author'] ) );
+			// printf( __( 'Imported comment from <strong>%s</strong>', 'typo3-importer'), stripslashes( $comment['comment_author'] ) );
 			$inserted			= wp_insert_comment( $comment );
 		} else {
-			printf( __( 'Comment from <strong>%s</strong> already exists.', 'typo3-importer'), stripslashes( $comment['comment_author'] ) );
+			// printf( __( 'Comment from <strong>%s</strong> already exists.', 'typo3-importer'), stripslashes( $comment['comment_author'] ) );
 			$inserted			= false;
 		}
 
-		echo '</li>';
-		ob_flush(); flush();
+		// echo '</li>';
+		// ob_flush(); flush();
 
 		return $inserted;
 	}
 
-	function _normalize_tag( $matches ) {
-		return '<' . strtolower( $matches[1] );
+	/**
+	 * Askimet spam checker
+	 *
+	 * @ref http://www.binarymoon.co.uk/2010/03/akismet-plugin-theme-stop-spam-dead/
+	 * @param	array	content	$content['comment_author']
+	 *							$content['comment_author_email']
+	 *							$content['comment_author_url']
+	 *							$content['comment_content']
+	 * @return	boolean	true	is spam	false	is not spam
+	 */
+	function askimet_spam_checker( $content ) {
+		// innocent until proven guilty
+		$is_spam				= false;
+		$content				= (array) $content;
+
+		if ( function_exists( 'akismet_init' ) ) {
+			$wpcom_api_key		= get_option( 'wordpress_api_key' );
+
+			if ( ! empty( $wpcom_api_key ) ) {
+				global $akismet_api_host, $akismet_api_port;
+
+				// set remaining required values for akismet api
+				$content['user_ip']		= preg_replace( '/[^0-9., ]/', '', $_SERVER['REMOTE_ADDR'] );
+				$content['user_agent']	= $_SERVER['HTTP_USER_AGENT'];
+				$content['referrer']	= $_SERVER['HTTP_REFERER'];
+				$content['blog']		= get_option('home');
+
+				if ( empty( $content['referrer'] ) ) {
+					$content['referrer']	= get_permalink();
+				}
+
+				$query_str		= '';
+
+				foreach( $content as $key => $data ) {
+					if ( ! empty( $data ) ) {
+						$query_str	.= $key . '=' . urlencode(	stripslashes( $data ) ) . '&';
+					}
+				}
+
+				$response		= akismet_http_post( $query_str, $akismet_api_host, '/1.1/comment-check', $akismet_api_port );
+
+				if ( 'true' == $response[1] ) {
+					update_option( 'akismet_spam_count', get_option('akismet_spam_count') + 1 );
+					$is_spam		= true;
+				}
+			}
+		}
+
+		return $is_spam;
 	}
 
-	function lookup_author( $author_email, $author ) {
-		$post_author      		= email_exists( $author_email );
+	function parse_comment( $comment ) {
+		// Clean up content
+		$content				= $this->_prepare_content( $comment['comment_content'] );
+		// double-spacing issues
+		$content				= str_replace( $this->newline_wp, "\n", $content );
 
-		if ( $post_author )
-			return $post_author;
-
-		$url					= preg_replace( '#^[^@]+@#', 'http://', $author_email );
-		$author_arr				= explode( ' ', $author );
-
-		$username_arr			= array();
-		foreach ( $author_arr as $key => $value ) {
-			// remove all non word characters
-			$value				= preg_replace( '#\W#', '', $value );
-			$value				= strtolower( $value );
-			$username_arr[]		= $value;
-		}
-		$username				= implode( '.', $username_arr );
-
-		$username_orig			= $username;
-		$offset					= 1;
-		while ( username_exists( $username ) ) {
-			$username			= $username_orig . '.' . $offset;
-			$offset++;
-		}
-
-		$password				= wp_generate_password();
-		$first					= array_shift( $author_arr );
-		$last					= implode( ' ', $author_arr );
-
-		$user					= array(
-			'user_login'		=> $username,
-			'user_email'		=> $author_email,
-			'user_url'			=> $url,
-			'display_name'		=> $author,
-			'user_pass'			=> $password,
-			'first_name'		=> $first,
-			'last_name'			=> $last,
-			'role'				=> 'author',
+		// Send back the array of details
+		return array(
+			'comment_post_ID'		=> $this->get_wp_post_ID( $comment['typo3_comment_post_ID'] ),
+			'comment_author'		=> $comment['comment_author'],
+			'comment_author_url'	=> $comment['comment_author_url'],
+			'comment_author_email'	=> $comment['comment_author_email'],
+			'comment_content'		=> $content,
+			'comment_date'			=> $comment['comment_date'],
+			'comment_author_IP'		=> $comment['comment_author_IP'],
+			'comment_approved'		=> $comment['comment_approved'],
+			'comment_karma'			=> $comment['itemid'], // Need this and next value until rethreading is done
+			'comment_agent'			=> 't3:tx_comments',  // Custom type, so we can find it later for processing
+			'comment_type'			=> '',	// blank for comment
+			'user_ID'				=> email_exists( $comment['comment_author_email'] ),
 		);
-
-		$post_author      		= wp_insert_user( $user );
-
-		if ( $post_author ) {
-			echo '<p>' . sprintf( __( "%s added as an author." , 'typo3-importer'), $author ) . '</p>';
-
-			return $post_author;
-		} else {
-			false;
-		}
 	}
 
-	function import_post( $post ) {
-		// lookup or create author for posts, but not comments
-		$post_author      		= $this->lookup_author( $post['props']['author_email'], $post['props']['author'] );
+	// Gets the post_ID that a TYPO3 post has been saved as within WP
+	function get_wp_post_ID( $post ) {
+		if ( empty( $this->postmap[$post] ) )
+		 	$this->postmap[$post] = (int) $this->wpdb->get_var( $this->wpdb->prepare( "SELECT post_id FROM {$this->wpdb->postmeta} WHERE meta_key = 't3:tt_news.uid' AND meta_value = %d", $post ) );
 
-		if ( in_array( $post['status'], $this->post_status_options ) ) {
-			$post_status		= $post['status'];
+		return $this->postmap[$post];
+	}
+
+	function import_news_as_post( $news ) {
+		// lookup or create author for posts, but not comments
+		$post_author      		= $this->lookup_author( $news['props']['author_email'], $news['props']['author'] );
+
+		if ( in_array( $news['status'], $this->post_status_options ) ) {
+			$post_status		= $news['status'];
 		} else {
 			$post_status		= 'draft';
 		}
 
 		// leave draft's alone to prevent publishing something that had been hidden on TYPO3
-		if ( 'default' != $this->force_post_status && 'draft' != $post_status ) {
-			$post_status      	= $this->force_post_status;
+		$force_post_status		= get_t3i_options( 'force_post_status' );
+		if ( 'default' != $force_post_status && 'draft' != $post_status ) {
+			$post_status      	= $force_post_status;
 		}
 
-		$post_password    		= $this->protected_password ? $this->protected_password : '';
-		$post_category			= $post['category'];
-		$post_date				= $post['datetime'];
+		$post_password    		= get_t3i_options( 'protected_password' );
+		$post_category			= $news['category'];
+		$post_date				= $news['datetime'];
 
 		// Cleaning up and linking the title
-		$post_title				= isset( $post['title'] ) ? trim( $post['title'] ) : '';
+		$post_title				= isset( $news['title'] ) ? $news['title'] : '';
 		$post_title				= strip_tags( $post_title ); // Can't have tags in the title in WP
 		$post_title				= trim( $post_title );
 
 		// Clean up content
 		// TYPO3 stores bodytext usually in psuedo HTML
-		$post_content			= $this->_prepare_content( $post['bodytext'] );
+		$post_content			= $this->_prepare_content( $news['bodytext'] );
 
 		// Handle any tags associated with the post
-		$tags_input				= !empty( $post['props']['keywords'] ) ? $post['props']['keywords'] : '';
+		$tags_input				= ! empty( $news['props']['keywords'] ) ? $news['props']['keywords'] : '';
 
 		// Check if comments are closed on this post
-		$comment_status			= $post['props']['comments'];
+		$comment_status			= $news['props']['comments'];
 
 		// Add excerpt
-		$post_excerpt			= !empty( $post['props']['excerpt'] ) ? $post['props']['excerpt'] : '';
+		$post_excerpt			= ! empty( $news['props']['excerpt'] ) ? $news['props']['excerpt'] : '';
 
 		// add slug AKA url
-		$post_name				= $post['props']['slug'];
+		$post_name				= $news['props']['slug'];
 
-		echo '<li>';
-		if ( $post_id = post_exists( $post_title, $post_content, $post_date ) ) {
-			printf( __( 'Post <strong>%s</strong> already exists.', 'typo3-importer'), stripslashes( $post_title ) );
-		} else {
-			printf( __( 'Imported post <strong>%s</strong>', 'typo3-importer'), stripslashes( $post_title ) );
+		$post_id				= post_exists( $post_title, $post_content, $post_date );
+		if ( ! $post_id ) {
 			$postdata			= compact( 'post_author', 'post_date', 'post_content', 'post_title', 'post_status', 'post_password', 'tags_input', 'comment_status', 'post_excerpt', 'post_category', 'post_name' );
 			// @ref http://codex.wordpress.org/Function_Reference/wp_insert_post
 			$post_id			= wp_insert_post( $postdata, true );
@@ -493,28 +708,10 @@ class TYPO3_Importer extends WP_Importer {
 			if ( is_wp_error( $post_id ) ) {
 				if ( 'empty_content' == $post_id->getErrorCode() )
 					return; // Silent skip on "empty" posts
-				return $post_id;
-			}
-			if ( !$post_id ) {
-				_e( 'Couldn&#8217;t get post ID (creating post failed!)', 'typo3-importer');
-				echo '</li>';
-				return new WP_Error( 'insert_post_failed', __( 'Failed to create post.', 'typo3-importer') );
-			}
-
-			$this->featured_image_id	= false;
-
-			// replace original external images with internal
-			$this->_typo3_replace_images( $post_id );
-
-			// Handle all the metadata for this post
-			$this->insert_postmeta( $post_id, $post );
-
-			if ( $this->set_featured_image && $this->featured_image_id ) {
-				update_post_meta( $post_id, "_thumbnail_id", $this->featured_image_id );
 			}
 		}
-		echo '</li>';
-		ob_flush(); flush();
+
+		return $post_id;
 	}
 
 	function insert_postmeta( $post_id, $post ) {
@@ -532,10 +729,12 @@ class TYPO3_Importer extends WP_Importer {
 						break;
 
 					case 'excerpt':
+						// TODO figure out other SEO packages
 						add_post_meta( $post_id, 'thesis_description', $value );
 						break;
 
 					case 'keywords':
+						// TODO figure out other SEO packages
 						add_post_meta( $post_id, 'thesis_keywords', $value );
 						break;
 
@@ -544,6 +743,7 @@ class TYPO3_Importer extends WP_Importer {
 						break;
 
 					case 'imagecaption':
+						// TODO apply imagecaption to related image
 						break;
 
 					case 'news_files':
@@ -567,6 +767,50 @@ class TYPO3_Importer extends WP_Importer {
 		}
 	}
 
+	function _typo3_append_links( $post_id, $links ) {
+		$post					= get_post( $post_id );
+		$post_content			= $post->post_content;
+
+		// create header
+		$tag					= get_t3i_options( 'related_links_header_tag' );
+		$new_content			= ( $tag ) ? '<h' . $tag . '>' : '';
+		$new_content			.= __(  get_t3i_options( 'related_links_header' ), 'typo3-importer');
+		$new_content			.= ( $tag ) ? '</h' . $tag . '>' : '';
+
+		$wrap					= get_t3i_options( 'related_links_wrap' );
+		$wrap					= explode( '|', $wrap );
+		$new_content			.= ( isset( $wrap[0] ) ) ? $wrap[0] : '';
+		$new_content			.= '<ul>';
+
+		// then create ul/li list of links
+		// link title is either link base or some title text
+		$links					= $this->_typo3_api_parse_typolinks( $links );
+		$links_arr				= explode( $this->newline_typo3, $links );
+
+		foreach ( $links_arr as $link ) {
+			$new_content		.= '<li>';
+
+			// normally links processed by _typo3_api_parse_typolinks
+			if ( ! preg_match( '#^http#i', $link ) ) {
+				$new_content	.= $link;
+			} else {
+				$new_content	.= '<a href="' . $link . '">' . $link . '</a>';
+			}
+			$new_content		.= '</li>';
+		}
+
+		$new_content			.= '</ul>';
+		$new_content			.= ( isset( $wrap[1] ) ) ? $wrap[1] : '';
+		$post_content			.= $new_content;
+
+		$post					= array(
+			'ID'			=> $post_id,
+			'post_content'	=> $post_content
+		);
+	 
+		wp_update_post( $post );
+	}
+
 	function _typo3_append_files($post_id, $files) {
 		if ( $this->no_media_import )
 			return;
@@ -575,7 +819,15 @@ class TYPO3_Importer extends WP_Importer {
 		$post_content			= $post->post_content;
 
 		// create header
-		$new_content			= __( '<h3>Related Files</h3>' , 'typo3-importer');
+		$tag					= get_t3i_options( 'related_files_header_tag' );
+		$new_content			= ( $tag ) ? '<h' . $tag . '>' : '';
+		$new_content			.= __(  get_t3i_options( 'related_files_header' ), 'typo3-importer');
+		$new_content			.= ( $tag ) ? '</h' . $tag . '>' : '';
+
+		$wrap					= get_t3i_options( 'related_files_wrap' );
+		$wrap					= explode( '|', $wrap );
+		$new_content			.= ( isset( $wrap[0] ) ) ? $wrap[0] : '';
+
 		// then create ul/li list of links
 		$new_content			.= '<ul>';
 
@@ -607,42 +859,7 @@ class TYPO3_Importer extends WP_Importer {
 		}
 
 		$new_content			.= '</ul>';
-		$post_content			.= $new_content;
-
-		$post					= array(
-			'ID'			=> $post_id,
-			'post_content'	=> $post_content
-		);
-	 
-		wp_update_post( $post );
-	}
-
-	function _typo3_append_links( $post_id, $links ) {
-		$post					= get_post( $post_id );
-		$post_content			= $post->post_content;
-
-		// create header
-		$new_content			= __( '<h3>Related Links</h3>' , 'typo3-importer');
-		$new_content			.= '<ul>';
-
-		// then create ul/li list of links
-		// link title is either link base or some title text
-		$links					= $this->_typo3_api_parse_typolinks( $links );
-		$links_arr				= explode( $this->newline_typo3, $links );
-
-		foreach ( $links_arr as $link ) {
-			$new_content		.= '<li>';
-
-			// normally links processed by _typo3_api_parse_typolinks
-			if ( ! preg_match( '#^http#i', $link ) ) {
-				$new_content	.= $link;
-			} else {
-				$new_content	.= '<a href="' . $link . '">' . $link . '</a>';
-			}
-			$new_content		.= '</li>';
-		}
-
-		$new_content			.= '</ul>';
+		$new_content			.= ( isset( $wrap[1] ) ) ? $wrap[1] : '';
 		$post_content			.= $new_content;
 
 		$post					= array(
@@ -691,6 +908,7 @@ class TYPO3_Importer extends WP_Importer {
 				}
 			}
 
+			// TODO config caption for own, title, alt or none
 			// try to figure out longest amount of the caption to keep
 			// push src, title to like images, captions arrays
 			if ( $title == $alt 
@@ -763,6 +981,7 @@ class TYPO3_Importer extends WP_Importer {
 
 			// @ref http://codex.wordpress.org/Function_Reference/wp_insert_attachment
 			$caption			= isset($captions[$key]) ? $captions[$key] : '';
+			// TODO nice title from file name if possible
 			$title				= $caption ? $caption : sanitize_title_with_dashes($file);
 
 			$wp_filetype		= wp_check_filetype($file, null);
@@ -785,7 +1004,6 @@ class TYPO3_Importer extends WP_Importer {
 
 
 		// insert [gallery] into content after the second paragraph
-		// TODO prevent inserting gallery into pre/code sections
 		$post_content_array		= explode( $this->newline_wp, $post_content );
 		$post_content_arr_size	= sizeof( $post_content_array );
 		$new_post_content		= '';
@@ -793,15 +1011,18 @@ class TYPO3_Importer extends WP_Importer {
 		$gallery_inserted		= false;
 
 		// don't give single image galleries
-		if ( 1 == $image_count && $this->set_featured_image ) {
+		if ( 1 == $image_count && get_t3i_options( 'set_featured_image' ) ) {
 			$gallery_code			= '';
 		}
 
+		$insert_gallery_shortcut	= get_t3i_options( 'insert_gallery_shortcut' );
+
+		// TODO prevent inserting gallery into pre/code sections
 		for ( $i = 0; $i < $post_content_arr_size; $i++ ) {
-			if ( $this->insert_gallery_shortcut != $i ) {
+			if ( $insert_gallery_shortcut != $i ) {
 				$new_post_content	.= $post_content_array[$i] . "{$this->newline_wp}";
 			} else {
-				if ( $this->insert_gallery_shortcut != 0 && $this->insert_gallery_shortcut == $i ) {
+				if ( $insert_gallery_shortcut != 0 && $insert_gallery_shortcut == $i ) {
 					$new_post_content	.= "{$gallery_code}{$this->newline_wp}";
 					$gallery_inserted	= true;
 				}
@@ -810,7 +1031,7 @@ class TYPO3_Importer extends WP_Importer {
 			}
 		}
 
-		if ( ! $gallery_inserted && 0 != $this->insert_gallery_shortcut ) {
+		if ( ! $gallery_inserted && 0 != $insert_gallery_shortcut ) {
 			$new_post_content	.= $gallery_code;
 		}
 		
@@ -820,29 +1041,6 @@ class TYPO3_Importer extends WP_Importer {
 		);
 	 
 		wp_update_post( $post );
-	}
-
-	function parse_comment( $comment ) {
-		// Clean up content
-		$content				= $this->_prepare_content( $comment['comment_content'] );
-		// double-spacing issues
-		$content				= str_replace( $this->newline_wp, "\n", $content );
-
-		// Send back the array of details
-		return array(
-			'comment_post_ID'		=> $this->get_wp_post_ID( $comment['typo3_comment_post_ID'] ),
-			'comment_author'		=> $comment['comment_author'],
-			'comment_author_url'	=> $comment['comment_author_url'],
-			'comment_author_email'	=> $comment['comment_author_email'],
-			'comment_content'		=> $content,
-			'comment_date'			=> $comment['comment_date'],
-			'comment_author_IP'		=> $comment['comment_author_IP'],
-			'comment_approved'		=> $comment['comment_approved'],
-			'comment_karma'			=> $comment['itemid'], // Need this and next value until rethreading is done
-			'comment_agent'			=> 't3:tx_comments',  // Custom type, so we can find it later for processing
-			'comment_type'			=> '',	// blank for comment
-			'user_ID'				=> email_exists( $comment['comment_author_email'] ),
-		);
 	}
 
 	// Clean up content
@@ -872,11 +1070,13 @@ class TYPO3_Importer extends WP_Importer {
 		$post_content_arr_size	= sizeof( $post_content_array );
 		$new_post_content		= '';
 
+		$insert_more_link			= get_t3i_options( 'insert_more_link' );
+
 		for ( $i = 0; $i < $post_content_arr_size; $i++ ) {
-			if ( $this->insert_more_link != $i ) {
+			if ( $insert_more_link != $i ) {
 				$new_post_content	.= $post_content_array[$i] . "{$this->newline_wp}";
 			} else {
-				if ( $this->insert_more_link != 0 && $this->insert_more_link == $i ) {
+				if ( $insert_more_link != 0 && $insert_more_link == $i ) {
 					$new_post_content	.= "{$morelink_code}{$this->newline_wp}";
 				}
 
@@ -890,56 +1090,105 @@ class TYPO3_Importer extends WP_Importer {
 		return $content;
 	}
 
-	// Gets the post_ID that a TYPO3 post has been saved as within WP
-	function get_wp_post_ID( $post ) {
-		if ( empty( $this->postmap[$post] ) )
-		 	$this->postmap[$post] = (int) $this->wpdb->get_var( $this->wpdb->prepare( "SELECT post_id FROM {$this->wpdb->postmeta} WHERE meta_key = 't3:tt_news.uid' AND meta_value = %d", $post ) );
+	function lookup_author( $author_email, $author ) {
+		$author					= trim( $author );
+		$author					= preg_replace( "#^By:? #i", '', $author );
+		$author					= ucwords( strtolower( $author ) );
+		$author					= str_replace( ' And ', ' and ', $author );
+		$author_email			= trim( $author_email );
 
-		return $this->postmap[$post];
-	}
-
-	// Gets the comment_ID that a TYPO3 comment has been saved as within WP
-	function get_wp_comment_ID( $comment ) {
-		if ( empty( $this->commentmap[$comment] ) )
-		 	$this->commentmap[$comment] = $this->wpdb->get_var( $this->wpdb->prepare( "SELECT comment_ID FROM {$this->wpdb->comments} WHERE comment_karma = %d", $comment ) );
-		return $this->commentmap[$comment];
-	}
-
-	// recreate typo3_api as a meta function to handle tasks
-	function typo3_api( $command = null, $args = null ) {
-		if ( ! $command ) {
+		// there's no information to create an author from
+		if ( '' == $author_email && '' == $author )
 			return false;
+
+		// create unique emails for no email authors
+		if ( '' != $author_email ) {
+			$no_email			= false;
+			$username			= $this->_create_username( $author );
+		} else {
+			$no_email			= true;
+			$domain				= preg_replace( '#(https?://)([^/]+)/#', '\2', $this->typo3_url );
+			$username			= $this->_create_username( $author, $domain );
+			$author_email		= $username . '@' . $domain;
 		}
 
-		switch ( $command ) {
-			case 'meta_news':
-				return $this->_typo3_api_meta_news( $args );
-				break;
+		$post_author      		= email_exists( $author_email );
 
-			case 'data_news':
-				return $this->_typo3_api_data_news( $args );
-				break;
+		if ( $post_author )
+			return $post_author;
 
-			case 'meta_comments':
-				return $this->_typo3_api_meta_comments( $args );
-				break;
+		if ( ! $no_email )
+			$url				= preg_replace( '#^[^@]+@#', 'http://', $author_email );
 
-			case 'data_comments':
-				return $this->_typo3_api_data_comments( $args );
-				break;
+		$password				= wp_generate_password();
+		$author_arr				= explode( ' ', $author );
+		$first					= array_shift( $author_arr );
+		$last					= implode( ' ', $author_arr );
 
-			default:
-				return false;
-				break;
+		$user					= array(
+			'user_login'		=> $username,
+			'user_email'		=> $author_email,
+			'user_url'			=> $url,
+			'display_name'		=> $author,
+			'nickname'			=> $author,
+			'user_pass'			=> $password,
+			'first_name'		=> $first,
+			'last_name'			=> $last,
+			'role'				=> 'author',
+		);
+
+		$post_author      		= wp_insert_user( $user );
+
+		if ( $post_author ) {
+			return $post_author;
+		} else {
+			false;
 		}
+	}
+
+	function _create_username( $author, $domain = false ) {
+		$author					= strtolower( $author );
+		$author_arr				= explode( ' ', $author );
+		$username_arr			= array();
+
+		foreach ( $author_arr as $key => $value ) {
+			// remove all non word characters
+			// TODO see if exploding array is really necessary
+			$value				= preg_replace( '#\W#', '', $value );
+			$username_arr[]		= $value;
+		}
+		$username				= implode( '.', $username_arr );
+
+		$username_orig			= $username;
+		$offset					= 1;
+
+		if ( $domain ) {
+			$email				= $username . '@' . $domain;
+			if ( email_exists( $email ) )
+				return $username;
+		}
+
+		if ( ! username_exists( $username ) )
+			return $username;
+
+		while ( username_exists( $username ) ) {
+			$username			= $username_orig . '.' . $offset;
+			$offset++;
+		}
+
+		return $username;
 	}
 
 	// return array of comment entries
 	// attempts to grab comments within same time frame as the imported news
-	function _typo3_api_data_comments( $args ) {
-		$results['entries']		= array();
+	function get_comments( $news_uid = null ) {
+		if ( is_null( $news_uid ) ) {
+			$news_uid			= $this->news_uid;
+		}
 
-		$query_items				= "
+		$results				= array();
+
+		$query_items			= "
 			SELECT
 				REPLACE(c.external_ref,'tt_news_','') typo3_comment_post_ID,
 				c.uid itemid,
@@ -952,23 +1201,25 @@ class TYPO3_Importer extends WP_Importer {
 				c.remote_addr comment_author_IP
 			FROM tx_comments_comments c
 			WHERE 1 = 1
+				AND c.external_prefix LIKE 'tx_ttnews'
+				AND c.deleted = 0 AND c.hidden = 0
+				AND c.external_ref LIKE 'tt_news_{$news_uid}'
+			ORDER BY c.uid ASC
 		";
 
-		$query_items				.= $this->typo3_comments_where;
-		$query_items				.= $this->typo3_comments_order;
-		$count					= (int) get_option( 't3api_sync_count_comments' );
-		$query_items				.= ' LIMIT ' . $count . ', ' . $this->batch_limit_comments;
 		$res_items				= $this->t3db->get_results($query_items, ARRAY_A);
-		$results['entries']		= $res_items;
+		if ( count( $res_items ) )
+			$results			= $res_items;
 
 		return $results;
 	}
 
-	// news_items returns array of entries
-	function _typo3_api_data_news( $args ) {
-		$results['entries']		= array();
+	function get_news( $uid = null ) {
+		if ( is_null( $uid ) ) {
+			$uid				= $this->news_uid;
+		}
 
-		$query_items				= "
+		$query				= "
 			SELECT n.uid itemid,
 				CASE
 					WHEN n.hidden = 1 THEN 'draft'
@@ -990,788 +1241,53 @@ class TYPO3_Importer extends WP_Importer {
 				n.links
 			FROM tt_news n
 			WHERE 1 = 1
-		";
-		$query_items				.= $this->typo3_news_where;
-		$query_items				.= $this->typo3_news_order;
-		$count					= (int) get_option( 't3api_sync_count_news' );
-		$query_items				.= ' LIMIT ' . $count . ', ' . $this->batch_limit_news;
-		$res_items				= $this->t3db->get_results($query_items, ARRAY_A);
-
-		foreach ( $res_items as $row ) {
-			$row['props']['datetime']		= $row['datetime'];
-
-			$row['props']['keywords']		= $row['keywords'];
-			unset($row['keywords']);
-
-			$row['props']['comments']		= $row['comments'];
-			unset($row['comments']);
-
-			$row['props']['excerpt']		= $row['excerpt'];
-			unset($row['excerpt']);
-
-			$row['props']['author']			= $row['author'];
-			unset($row['author']);
-
-			$row['props']['author_email']	= $row['author_email'];
-			unset($row['author_email']);
-
-			$row['props']['image']			= $row['image'];
-			unset($row['image']);
-
-			$row['props']['imagecaption']	= $row['imagecaption'];
-			unset($row['imagecaption']);
-
-			$row['props']['news_files']		= $row['news_files'];
-			unset($row['news_files']);
-
-			$row['props']['links']			= $row['links'];
-			unset($row['links']);
-
-			$row['props']['slug']			= $this->_typo3_api_news_slug($row['itemid']);
-
-			// Link each category to this post
-			$catids				= $this->_typo3_api_news_categories($row['itemid']);
-			$category_arr		= array();
-			foreach ($catids as $cat_name) {
-				// typo3 tt_news_cat => wp category taxomony
-				$category_arr[]	= wp_create_category($cat_name);
-			}
-
-			$row['category']		= $category_arr;
-			$results['entries'][]	= $row;
-		}
-
-		return $results;
-	}
-
-	function _typo3_api_news_slug( $uid ) {
-		$url					= '';
-
-		$query_items				= "
-			SELECT a.value_alias slug
-			FROM tx_realurl_uniqalias a
-			WHERE a.tablename = 'tt_news'
-				AND a.value_id = {$uid}
-			ORDER BY a.tstamp DESC
-			LIMIT 1
+				AND uid = {$uid}
 		";
 
-		$url					= $this->t3db->get_var( $query_items );
+		$row					= $this->t3db->get_row($query, ARRAY_A);
 
-		return $url;
-	}
+		$row['props']['datetime']		= $row['datetime'];
 
-	/*
-	 * @param	integer	tt_news id to lookup
-	 * @return	array	names of tt_news categories
-	 */
-	function _typo3_api_news_categories($uid) {
-		$sql					= sprintf("
-			SELECT c.title
-			FROM tt_news_cat c
-				LEFT JOIN tt_news_cat_mm m ON c.uid = m.uid_foreign
-			WHERE m.uid_local = %s
-		", $uid);
+		$row['props']['keywords']		= $row['keywords'];
+		unset($row['keywords']);
 
-		$results				= $this->t3db->get_results($sql);
+		$row['props']['comments']		= $row['comments'];
+		unset($row['comments']);
 
-		$cats					= array();
+		$row['props']['excerpt']		= $row['excerpt'];
+		unset($row['excerpt']);
 
-		foreach( $results as $cat ) {
-			$cats[]				= $cat->title;
+		$row['props']['author']			= $row['author'];
+		unset($row['author']);
+
+		$row['props']['author_email']	= $row['author_email'];
+		unset($row['author_email']);
+
+		$row['props']['image']			= $row['image'];
+		unset($row['image']);
+
+		$row['props']['imagecaption']	= $row['imagecaption'];
+		unset($row['imagecaption']);
+
+		$row['props']['news_files']		= $row['news_files'];
+		unset($row['news_files']);
+
+		$row['props']['links']			= $row['links'];
+		unset($row['links']);
+
+		$row['props']['slug']			= $this->_typo3_api_news_slug($row['itemid']);
+
+		// Link each category to this post
+		$catids				= $this->_typo3_api_news_categories($row['itemid']);
+		$category_arr		= array();
+		foreach ($catids as $cat_name) {
+			// typo3 tt_news_cat => wp category taxomony
+			$category_arr[]	= wp_create_category($cat_name);
 		}
 
-		return $cats;
-	}
+		$row['category']		= $category_arr;
 
-	// returns array of
-	// total - overall total of entries
-	// count - number of entries since last sync based upon time
-	function _typo3_api_meta_comments( $args ) {
-		$results				= array(
-			'total'		=> 0,
-		);
-
-		$query_total				= "SELECT COUNT(c.uid) FROM tx_comments_comments c WHERE 1 = 1";
-		$query_total				.= $this->typo3_comments_where;
-		$results['total']		= $this->t3db->get_var( $query_total );
-
-		if ( $this->import_limit && $this->import_limit < $results['total'] ) {
-			$results['total']	= $this->import_limit;
-		}
-
-		return $results;
-	}
-
-	// returns array of
-	// total - overall total of entries
-	// count - number of entries since last sync based upon time
-	function _typo3_api_meta_news( $args ) {
-		$results				= array(
-			'total'		=> 0,
-		);
-
-		$query_total				= "SELECT COUNT(n.uid) FROM tt_news n WHERE 1 = 1";
-		$query_total				.= $this->typo3_news_where;
-		$results['total']		= $this->t3db->get_var( $query_total );
-
-		if ( $this->import_limit && $this->import_limit < $results['total'] ) {
-			$results['total']	= $this->import_limit;
-		}
-
-		return $results;
-	}
-
-	function dispatch() {
-		global $wpdb;
-
-		if ( empty( $_REQUEST['step'] ) )
-			$step				= 0;
-		else
-			$step				= (int) $_REQUEST['step'];
-
-		$this->wpdb				= $wpdb;
-		$this->init();
-		$this->header();
-
-		switch ( $step ) {
-			case -5 :
-				$this->force_private_posts();
-				$this->greet();
-				break;
-			case -4 :
-				$this->delete_attachments();
-				$this->cleanup();
-				$this->greet();
-				break;
-			case -2 :
-				$this->delete_imports();
-			case -3 :
-				$this->delete_comments();
-				$this->cleanup();
-				$this->greet();
-				break;
-			case -1 :
-				$this->cleanup();
-				// Intentional no break
-			case 0 :
-				$this->greet();
-				break;
-			case 1 :
-			case 2 :
-			case 3 :
-			case 4 :
-				check_admin_referer( 'typo3-import' );
-				$result			= $this->{ 'step' . $step }();
-				if ( is_wp_error( $result ) ) {
-					$this->throw_error( $result, $step );
-				}
-				break;
-		}
-
-		$this->footer();
-	}
-
-	function delete_comments() {
-		$comment_count			= 0;
-
-		$query					= "SELECT comment_ID FROM {$this->wpdb->comments} WHERE comment_agent = 't3:tx_comments'";
-		$comments				= $this->wpdb->get_results( $query );
-
-		foreach( $comments as $comment ) {
-			// returns array of obj->ID
-			$comment_id			= $comment->comment_ID;
-
-			wp_delete_comment( $comment_id, true );
-
-			$comment_count++;
-		}
-
-		echo '<h3>' . __( 'Comments Deleted', 'typo3-importer') . '</h3>';
-		echo '<p>' . sprintf( __( "Successfully removed %s comments." , 'typo3-importer'), number_format( $comment_count ) ) . '</p>';
-		echo '<hr />';
-
-		delete_option( 't3api_sync_count_comments' );
-
-		return true;
-	}
-
-	function force_private_posts() {
-		$post_count				= 0;
-
-		// during botched imports not all postmeta is read successfully
-		// pull post ids with typo3_uid as post_meta key
-		$posts					= $this->wpdb->get_results( "SELECT post_id FROM {$this->wpdb->postmeta} WHERE meta_key = 't3:tt_news.uid'" );
-
-		foreach( $posts as $post ) {
-			// returns array of obj->ID
-			$post_id			= $post->post_id;
-
-			// dels post, meta & comments
-			// true is force delete
-
-			$post_arr				= array(
-				'ID'			=> $post_id,
-				'post_status'	=> 'private',
-			);
-		 
-			wp_update_post( $post_arr );
-
-			$post_count++;
-		}
-
-		echo '<h3>' . __( 'Prior Imports Forced to Private Status', 'typo3-importer') . '</h3>';
-		echo '<p>' . sprintf( __( "Successfully updated %s TYPO3 news imports to 'Private'." , 'typo3-importer'), number_format( $post_count ) ) . '</p>';
-		echo '<hr />';
-
-		return true;
-	}
-
-	function delete_imports() {
-		$post_count				= 0;
-
-		// during botched imports not all postmeta is read successfully
-		// pull post ids with typo3_uid as post_meta key
-		$posts					= $this->wpdb->get_results( "SELECT post_id FROM {$this->wpdb->postmeta} WHERE meta_key = 't3:tt_news.uid'" );
-
-		foreach( $posts as $post ) {
-			// returns array of obj->ID
-			$post_id			= $post->post_id;
-
-			// remove media relationships
-			$this->delete_attachments( $post_id );
-
-			// dels post, meta & comments
-			// true is force delete
-			wp_delete_post( $post_id, true );
-
-			$post_count++;
-		}
-
-		echo '<h3>' . __( 'Prior Imports Deleted', 'typo3-importer') . '</h3>';
-		echo '<p>' . sprintf( __( "Successfully removed %s TYPO3 news and their related media and comments." , 'typo3-importer'), number_format( $post_count ) ) . '</p>';
-		echo '<hr />';
-
-		return true;
-	}
-
-	function delete_attachments( $post_id = false ) {
-		$post_id				= $post_id ? $post_id : 0;
-		$query					= "SELECT ID FROM {$this->wpdb->posts} WHERE post_type = 'attachment' AND post_parent = {$post_id}";
-		$attachments			= $this->wpdb->get_results( $query );
-
-		$attachment_count		= 0;
-		foreach( $attachments as $attachment ) {
-			// true is force delete
-			wp_delete_attachment( $attachment->ID, true );
-			$attachment_count++;
-		}
-
-		if ( ! $post_id ) {
-			echo '<h3>' . __( 'Attachments Deleted', 'typo3-importer') . '</h3>';
-			echo '<p>' . sprintf( __( "Successfully removed %s no-post attachments." , 'typo3-importer'), number_format( $attachment_count ) ) . '</p>';
-			echo '<hr />';
-		}
-	}
-
-	// Technically the first half of step 1, this is separated to allow for AJAX
-	// calls. Sets up some variables and options and confirms authentication.
-	function check_typo3_access() {
-		// Log in to confirm the details are correct
-		if ( empty( $this->t3db_host )
-			|| empty( $this->typo3_url )
-			|| empty( $this->t3db_name )
-			|| empty( $this->t3db_username )
-			|| empty( $this->t3db_password )
-		) {
-			?>
-			<p><?php _e( 'Please provide your TYPO3 website information.', 'typo3-importer') ?></p>
-			<p><a href="<?php echo esc_url($_SERVER['PHP_SELF'] . '?import=typo3-importer&amp;step=0&amp;_wpnonce=' . wp_create_nonce( 'typo3-import' ) . '&amp;_wp_http_referer=' . esc_attr( str_replace( '&step=-1', '', $_SERVER['REQUEST_URI'] ) ) ) ?>"><?php _e( 'Start again', 'typo3-importer') ?></a></p>
-			<?php
-			return false;
-		}
-	
-		// check for typo3_url validity & reachability
-		$verified = $this-> _is_typo3_website( $this->typo3_url );
-		if ( ! $verified ) {
-			?>
-			<p><?php _e( 'TYPO3 website not found. Check your TYPO3 URL and try again.', 'typo3-importer') ?></p>
-			<p><a href="<?php echo esc_url($_SERVER['PHP_SELF'] . '?import=typo3-importer&amp;step=-1&amp;_wpnonce=' . wp_create_nonce( 'typo3-import' ) . '&amp;_wp_http_referer=' . esc_attr( str_replace( '&step=1', '', $_SERVER['REQUEST_URI'] ) ) ) ?>"><?php _e( 'Start again', 'typo3-importer') ?></a></p>
-			<?php
-			return $verified;
-		} else {
-			update_option( 'typo3_url_verified', 'yes' );
-		}
-
-		return true;
-	}
-
-	function _is_typo3_website( $url = null ) {
-		if ( ! $url ) {
-			// no url
-			return false;
-		}
-
-		// regex url
-		if ( filter_var( $url, FILTER_VALIDATE_URL ) ) {
-			// pull site's TYPO3 admin url, http://example.com/typo3
-			$typo3_url			= preg_replace( '#$#', 'typo3/index.php', $url );
-
-			// check for TYPO3 header code
-			$html				= file_get_contents( $typo3_url );
-
-			// look for `<meta name="generator" content="TYPO3`
-			// looking for meta doesn't work as TYPO3 throws browser error
-			// if exists, return true, else false
-			if ( preg_match( '#typo3logo#', $html ) ) {
-				return true;
-			} else {
-				// not typo3 site
-				return false;
-			}
-		} else {
-			// bad url
-			return false;
-		}
-	}
-
-	function init() {
-		// Get details from form or from DB
-		// cycle through what's available to set or get
-		$t3db_fields			= array('t3db_host',
-									'typo3_url',
-									't3db_name',
-									't3db_username',
-									't3db_password'
-								);
-
-		foreach ( $t3db_fields as $key ) {
-			if ( isset( $_POST[ $key ] ) && ! empty( $_POST[ $key ] ) ) {
-				// clean up URL once
-				if ( 'typo3_url' == $key ) {
-					// fix / appended to URLs with / already
-					$_POST[$key]	= preg_replace('#^https?://[^/]+$#', '$0/',  $_POST[$key]);
-				}
-
-				// Store details for later
-				$this->$key		= $_POST[$key];
-				update_option( $key, $this->$key );
-			} else {
-				$this->$key		= get_option( $key );
-			}
-		}
-
-		// _POST['login'] denotes first run
-
-		if ( isset( $_POST['force_post_status'] ) ) {
-			$this->force_post_status	= $_POST['force_post_status'];
-		} elseif ( $_POST['login'] ) {
-			$this->force_post_status	= 'default';
-		} else {
-			$this->force_post_status	= get_option( 't3api_force_post_status', 'default' );
-		}
-		update_option( 't3api_force_post_status', $this->force_post_status );
-
-		if ( isset( $_POST['insert_more_link'] ) ) {
-			$this->insert_more_link	= $_POST['insert_more_link'];
-		} elseif ( $_POST['login'] ) {
-			$this->insert_more_link	= 3;
-		} else {
-			$this->insert_more_link	= get_option( 't3api_insert_more_link', 0 );
-		}
-		update_option( 't3api_insert_more_link', $this->insert_more_link );
-
-		if ( isset( $_POST['set_featured_image'] ) ) {
-			$this->set_featured_image	= $_POST['set_featured_image'];
-		} elseif ( $_POST['login'] ) {
-			$this->set_featured_image	= 0;
-		} else {
-			$this->set_featured_image	= get_option( 't3api_set_featured_image', 0 );
-		}
-		update_option( 't3api_set_featured_image', $this->set_featured_image );
-
-		if ( isset( $_POST['insert_gallery_shortcut'] ) ) {
-			$this->insert_gallery_shortcut	= $_POST['insert_gallery_shortcut'];
-		} elseif ( $_POST['login'] ) {
-			$this->insert_gallery_shortcut	= 0;
-		} else {
-			$this->insert_gallery_shortcut	= get_option( 't3api_insert_gallery_shortcut', -1 );
-		}
-		update_option( 't3api_insert_gallery_shortcut', $this->insert_gallery_shortcut );
-
-		if ( isset( $_POST['approve_comments'] ) ) {
-			$this->approve_comments	= $_POST['approve_comments'];
-		} elseif ( $_POST['login'] ) {
-			$this->approve_comments	= 0;
-		} else {
-			$this->approve_comments	= get_option( 't3api_approve_comments', 0 );
-		}
-		update_option( 't3api_approve_comments', $this->approve_comments );
-
-		if ( isset( $_POST['no_comments_import'] ) ) {
-			$this->no_comments_import	= $_POST['no_comments_import'];
-		} elseif ( $_POST['login'] ) {
-			$this->no_comments_import	= 0;
-		} else {
-			$this->no_comments_import	= get_option( 't3api_no_comments_import', 0 );
-		}
-		update_option( 't3api_no_comments_import', $this->no_comments_import );
-
-		if ( isset( $_POST['no_media_import'] ) ) {
-			$this->no_media_import	= $_POST['no_media_import'];
-		} elseif ( $_POST['login'] ) {
-			$this->no_media_import	= 0;
-		} else {
-			$this->no_media_import	= get_option( 't3api_no_media_import', 0 );
-		}
-		update_option( 't3api_no_media_import', $this->no_media_import );
-
-		if ( isset( $_POST['protected_password'] ) ) {
-			$this->protected_password	= $_POST['protected_password'];
-		} elseif ( $_POST['login'] ) {
-			$this->protected_password	= null;
-		} else {
-			$this->protected_password	= get_option( 't3api_protected_password', null );
-		}
-		update_option( 't3api_protected_password', $this->protected_password );
-
-		if ( isset( $_POST['import_limit'] ) ) {
-			$this->import_limit	= (int) $_POST['import_limit'];
-		} elseif ( $_POST['login'] ) {
-			$this->import_limit	= 0;
-		} else {
-			$this->import_limit	= get_option( 't3api_import_limit', 0 );
-		}
-		update_option( 't3api_import_limit', $this->import_limit );
-
-		if ( $this->import_limit && $this->batch_limit_news > $this->import_limit ) {
-			$this->batch_limit_news	= $this->import_limit;
-		}
-
-		if ( $this->import_limit && $this->batch_limit_comments > $this->import_limit ) {
-			$this->batch_limit_comments	= $this->import_limit;
-		}
-	}
-
-	// Check form inputs and start importing posts
-	function step1() {
-		$type					= 'news';
-		do_action( 'import_start' );
-		$this->init();
-
-		set_time_limit( 0 );
-		update_option( 't3api_step', 1 );
-		
-		if ( $_POST['login'] ) {
-			// First run (non-AJAX)
-			$setup				= $this->check_typo3_access();
-			if ( !$setup ) {
-				return false;
-			} else if ( is_wp_error( $setup ) ) {
-				$this->throw_error( $setup, get_option( 't3api_step' ) );
-				return false;
-			}
-		}
-
-		$this->_create_db_client();
-
-		echo '<div id="t3api-status">';
-		echo '<h3>' . __( 'Importing News', 'typo3-importer') . '</h3>';
-		echo '<p>' . __( 'We&#8217;re downloading and importing your TYPO3 tt_news.', 'typo3-importer') . '</p>';
-
-		$count					= (int) get_option( 't3api_sync_count_' . $type );
-		if ( ! $count ) {
-			// We haven't downloaded meta yet, so do that first
-			$result				= $this->get_meta( $type );
-			if ( is_wp_error( $result ) ) {
-				$this->throw_error( $result, get_option( 't3api_step' ) );
-				return false;
-			}
-		}
-
-		// Download a batch of $type
-		$result					= $this->get_data( $type );
-		if ( is_wp_error( $result ) ) {
-			if ( 406 == $result->getErrorCode() ) {
-				?>
-				<p><strong><?php _e( 'Uh oh &ndash; TYPO3 has disconnected us because we made too many requests to their servers too quickly.', 'typo3-importer') ?></strong></p>
-				<p><strong><?php _e( 'We&#8217;ve saved where you were up to though, so if you come back to this importer in about 30 minutes, you should be able to continue from where you were.', 'typo3-importer') ?></strong></p>
-				<?php
-				echo $this->next_step( get_option( 't3api_step' ), __( 'Try Again', 'typo3-importer') );
-				return false;
-			} else {
-				$this->throw_error( $result, get_option( 't3api_step' ) );
-				return false;
-			}
-		}
-
-		$count					= (int) get_option( 't3api_sync_count_' . $type );
-		$total					= (int) get_option( 't3api_total_' . $type );
-
-		if ( $count < $total ) {
-			$limit				= ( 'news' == $type ) ? $this->batch_limit_news : $this->batch_limit_comments;
-			$batch				= ceil( $count / $limit );
-			$batches			= ( $total > $limit ) ? ceil( $total / $limit ) : 1;
-			echo '<p><strong>' . sprintf( __( 'Imported %s batch %d of %d', 'typo3-importer'), $type, $batch, $batches ) . '</strong></p>';
-		?>
-			<form action="admin.php?import=typo3-importer" method="post" id="t3api-auto-repost">
-			<?php wp_nonce_field( 'typo3-import' ) ?>
-			<input type="hidden" name="step" id="step" value="<?php echo get_option( 't3api_step' ); ?>" />
-			<p><input type="submit" class="button" value="<?php esc_attr_e( 'Import the next batch', 'typo3-importer') ?>" /> <span id="auto-message"></span></p>
-			</form>
-			<?php $this->auto_ajax( 't3api-auto-repost', 'auto-message' ); ?>
-		<?php
-		} elseif ( $this->no_comments_import ) {
-			echo $this->next_step( 4, __( 'Finish Import', 'typo3-importer') );
-			$this->auto_submit();
-		} else {
-			echo '<p>' . __( 'Your posts have all been imported, but wait &#8211; there&#8217;s more! Now we need to download &amp; import your comments.', 'typo3-importer') . '</p>';
-			echo $this->next_step( 2, __( 'Download my comments &raquo;', 'typo3-importer') );
-			$this->auto_submit();
-		}
-		echo '</div>';
-	}
-
-	function step4() {
-		$this->finish();
-	}
-
-	// Download comments to local XML
-	function step2() {
-		$type					= 'comments';
-		do_action( 'import_start' );
-		$this->init();
-
-		set_time_limit( 0 );
-		update_option( 't3api_step', 2 );
-
-		$this->_create_db_client();
-
-		echo '<div id="t3api-status">';
-		echo '<h3>' . __( 'Importing Comments', 'typo3-importer') . '</h3>';
-		echo '<p>' . __( 'Now we will download your comments so we can import them (this could take a <strong>long</strong> time if you have lots of comments).', 'typo3-importer') . '</p>';
-		ob_flush(); flush();
-
-		$count					= (int) get_option( 't3api_sync_count_' . $type );
-		if ( ! $count ) {
-			// We haven't downloaded meta yet, so do that first
-			$result				= $this->get_meta( $type );
-			if ( is_wp_error( $result ) ) {
-				$this->throw_error( $result, get_option( 't3api_step' ) );
-				return false;
-			}
-		}
-
-		// Download a batch of actual comments
-		$result					= $this->get_data( $type );
-		if ( is_wp_error( $result ) ) {
-			$this->throw_error( $result, get_option( 't3api_step' ) );
-			return false;
-		}
-
-		$count					= (int) get_option( 't3api_sync_count_' . $type );
-		$total					= (int) get_option( 't3api_total_' . $type );
-
-		if ( $count < $total ) {
-			$limit				= ( 'news' == $type ) ? $this->batch_limit_news : $this->batch_limit_comments;
-			$batch				= ceil( $count / $limit );
-			$batches			= ( $total > $limit ) ? ceil( $total / $limit ) : 1;
-			echo '<p><strong>' . sprintf( __( 'Imported %s batch %d of %d', 'typo3-importer'), $type, $batch, $batches ) . '</strong></p>';
-		?>
-			<form action="admin.php?import=typo3-importer" method="post" id="t3api-auto-repost">
-			<?php wp_nonce_field( 'typo3-import' ) ?>
-			<input type="hidden" name="step" id="step" value="<?php echo get_option( 't3api_step' ); ?>" />
-			<p><input type="submit" class="button" value="<?php esc_attr_e( 'Import the next batch', 'typo3-importer') ?>" /> <span id="auto-message"></span></p>
-			</form>
-			<?php $this->auto_ajax( 't3api-auto-repost', 'auto-message' ); ?>
-		<?php
-		} else {
-			echo '<p>' . __( 'Your comments have all been imported now, but we still need to rebuild your conversation threads.', 'typo3-importer') . '</p>';
-			echo $this->next_step( 3, __( 'Rebuild my comment threads &raquo;', 'typo3-importer') );
-			$this->auto_submit();
-		}
-		echo '</div>';
-	}
-
-	// Re-thread comments already in the DB
-	function step3() {
-		do_action( 'import_start' );
-		$this->init();
-
-		set_time_limit( 0 );
-		update_option( 't3api_step', 3 );
-
-		// TODO use comment meta to save/pull comment parent
-		if ( false ) {
-		echo '<div id="t3api-status">';
-		echo '<h3>' . __( 'Threading Comments', 'typo3-importer') . '</h3>';
-		echo '<p>' . __( 'We are now re-building the threading of your comments (this can also take a while if you have lots of comments).', 'typo3-importer') . '</p>';
-		ob_flush(); flush();
-
-		// Only bother adding indexes if they have over $this->batch_limit_comments (arbitrary number)
-		$imported_comments = $this->wpdb->get_var( "SELECT COUNT(*) FROM {$this->wpdb->comments} WHERE comment_agent = 't3:tx_comments'" );
-		$added_indices = false;
-		if ( $this->batch_limit_comments < $imported_comments ) {
-			include_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-			$added_indices = true;
-			add_clean_index( $this->wpdb->comments, 'comment_agent' );
-		}
-
-		// Get TYPO3 comments, which haven't been threaded yet, $this->batch_limit_comments at a time and thread them
-		while ( $comments = $this->wpdb->get_results( "SELECT comment_ID, comment_agent FROM {$this->wpdb->comments} WHERE comment_agent = 't3:tx_comments' AND comment_agent != '0' LIMIT {$this->batch_limit_comments}", OBJECT ) ) {
-			foreach ( $comments as $comment ) {
-				$this->wpdb->update( $this->wpdb->comments,
-								array( 'comment_parent' => $this->get_wp_comment_ID( $comment->comment_agent ), 'comment_agent' => 't3:tx_comments-done' ),
-								array( 'comment_ID' => $comment->comment_ID ) );
-			}
-			wp_cache_flush();
-			$this->wpdb->flush();
-		}
-
-		// Revert the comments table back to normal and optimize it to reclaim space
-		if ( $added_indices ) {
-			drop_index( $this->wpdb->comments, 'comment_agent' );
-			$this->wpdb->query( "OPTIMIZE TABLE {$this->wpdb->comments}" );
-		}
-
-		if ( $imported_comments > 1 )
-			echo '<p>' . sprintf( __( "Successfully re-threaded %s comments." , 'typo3-importer'), number_format( $imported_comments ) ) . '</p>';
-
-		} // end if false
-
-		$this->finish();
-	}
-
-	function finish() {
-		// Clean up database and we're out
-		$this->cleanup();
-		do_action( 'import_done', 'typo3' );
-		echo '<h3>';
-		printf( __( 'All done. <a href="%s">Have fun!</a>', 'typo3-importer'), get_option( 'home' ) );
-		echo '</h3>';
-		echo '</div>';
-	}
-
-	// Output an error message with a button to try again.
-	function throw_error( $error, $step ) {
-		echo '<p><strong>' . $error->get_error_message() . '</strong></p>';
-		echo $this->next_step( $step, __( 'Try Again', 'typo3-importer') );
-	}
-
-	// Returns the HTML for a link to the next page
-	function next_step( $next_step, $label, $id = 't3api-next-form' ) {
-		$str  = '<form action="admin.php?import=typo3-importer" method="post" id="' . $id . '">';
-		$str .= wp_nonce_field( 'typo3-import', '_wpnonce', true, false );
-		$str .= wp_referer_field( false );
-		$str .= '<input type="hidden" name="step" id="step" value="' . esc_attr($next_step) . '" />';
-		$str .= '<p><input type="submit" class="button" value="' . esc_attr( $label ) . '" /> <span id="auto-message"></span></p>';
-		$str .= '</form>';
-
-		return $str;
-	}
-
-	// Automatically submit the specified form after $seconds
-	// Include a friendly countdown in the element with id=$msg
-	function auto_submit( $id = 't3api-next-form', $msg = 'auto-message', $seconds = 5 ) {
-		?><script type="text/javascript">
-			next_counter = <?php echo $seconds ?>;
-			jQuery(document).ready(function(){
-				t3api_msg();
-			});
-
-			function t3api_msg() {
-				str = '<?php echo esc_js( _e( "Continuing in %d" , 'typo3-importer') ); ?>';
-				jQuery( '#<?php echo $msg ?>' ).html( str.replace( /%d/, next_counter ) );
-				if ( next_counter <= 0 ) {
-					if ( jQuery( '#<?php echo $id ?>' ).length ) {
-						jQuery( "#<?php echo $id ?> input[type='submit']" ).hide();
-						str = '<?php echo esc_js( __( "Continuing" , 'typo3-importer') ); ?> <img src="<?php echo esc_url( admin_url( 'images/wpspin_light.gif' ) ); ?>" alt="" id="processing" align="top" />';
-						jQuery( '#<?php echo $msg ?>' ).html( str );
-						jQuery( '#<?php echo $id ?>' ).submit();
-						return;
-					}
-				}
-				next_counter = next_counter - 1;
-				setTimeout('t3api_msg()', 1000);
-			}
-		</script><?php
-	}
-
-	// Automatically submit the form with #id to continue the process
-	// Hide any submit buttons to avoid people clicking them
-	// Display a countdown in the element indicated by $msg for "Continuing in x"
-	function auto_ajax( $id = 't3api-next-form', $msg = 'auto-message', $seconds = 5 ) {
-		?><script type="text/javascript">
-			next_counter = <?php echo $seconds ?>;
-			jQuery(document).ready(function(){
-				t3api_msg();
-			});
-
-			function t3api_msg() {
-				str = '<?php echo esc_js( __( "Continuing in %d" , 'typo3-importer') ); ?>';
-				jQuery( '#<?php echo $msg ?>' ).html( str.replace( /%d/, next_counter ) );
-				if ( next_counter <= 0 ) {
-					if ( jQuery( '#<?php echo $id ?>' ).length ) {
-						jQuery( "#<?php echo $id ?> input[type='submit']" ).hide();
-						jQuery.ajaxSetup({'timeout':3600000});
-						str = '<?php echo esc_js( __( "Processing next batch." , 'typo3-importer') ); ?> <img src="<?php echo esc_url( admin_url( 'images/wpspin_light.gif' ) ); ?>" alt="" id="processing" align="top" />';
-						jQuery( '#<?php echo $msg ?>' ).html( str );
-						jQuery('#t3api-status').load(ajaxurl, {'action':'typo3_importer',
-																'import':'typo3',
-																'step':jQuery('#step').val(),
-																'_wpnonce':'<?php echo wp_create_nonce( 'typo3-import' ) ?>',
-																'_wp_http_referer':'<?php echo $_SERVER['REQUEST_URI'] ?>'});
-						return;
-					}
-				}
-				next_counter = next_counter - 1;
-				setTimeout('t3api_msg()', 1000);
-			}
-		</script><?php
-	}
-
-	// Remove all options used during import process and
-	// set wp_comments entries back to "normal" values
-	function cleanup() {
-		delete_option( 't3api_step' );
-		delete_option( 'typo3_url_verified' );
-
-		foreach ( $this->import_types as $type ) {
-			delete_option( 't3api_sync_count_' . $type );
-			delete_option( 't3api_total_' . $type );
-		}
-
-		do_action( 'import_end' );
-	}
-
-	// t3db is the database connection
-	// for TYPO3 there's no API
-	// only database and url requests
-	// should be used for db connection and establishing valid website url
-	function _create_db_client() {
-		if ( null === $this->wpdb ) {
-			global $wpdb;
-			$this->wpdb			= $wpdb;
-		}
-
-		if ( $this->t3db ) return;
-
-		$this->t3db_host		= get_option( 't3db_host' );
-		$this->t3db_name		= get_option( 't3db_name' );
-		$this->t3db_username	= get_option( 't3db_username' );
-		$this->t3db_password	= get_option( 't3db_password' );
-
-		$this->t3db				= new wpdb($this->t3db_username, $this->t3db_password, $this->t3db_name, $this->t3db_host);
-	}
-
-	function add_plugin_action_links($links, $file) {
-		if ( $file == plugin_basename( __FILE__ ) ) {
-			$importer_link = '<a href="admin.php?import=typo3-importer">' . __('Import', 'typo3-importer') . '</a>';
-			// make the 'Import' link appear first
-			array_unshift( $links, $importer_link );
-		}
-
-		return $links;
+		return $row;
 	}
 
 	// remove TYPO3's broken link span code
@@ -1857,63 +1373,120 @@ class TYPO3_Importer extends WP_Importer {
 		return implode( '', $pre_tags );
 	}
 
+	function _typo3_api_news_slug( $uid ) {
+		$query_items				= "
+			SELECT a.value_alias slug
+			FROM tx_realurl_uniqalias a
+			WHERE a.tablename = 'tt_news'
+				AND a.value_id = {$uid}
+			ORDER BY a.tstamp DESC
+			LIMIT 1
+		";
 
-	/**
-	 * Askimet spam checker
-	 *
-	 * @ref http://www.binarymoon.co.uk/2010/03/akismet-plugin-theme-stop-spam-dead/
-	 * @param	array	content	$content['comment_author']
-	 *							$content['comment_author_email']
-	 *							$content['comment_author_url']
-	 *							$content['comment_content']
-	 * @return	boolean	true	is spam	false	is not spam
+		$url					= $this->t3db->get_var( $query_items );
+
+		return $url;
+	}
+
+	/*
+	 * @param	integer	tt_news id to lookup
+	 * @return	array	names of tt_news categories
 	 */
-	function askimet_spam_checker( $content ) {
-		// innocent until proven guilty
-		$is_spam				= false;
-		$content				= (array) $content;
+	function _typo3_api_news_categories($uid) {
+		$sql					= sprintf("
+			SELECT c.title
+			FROM tt_news_cat c
+				LEFT JOIN tt_news_cat_mm m ON c.uid = m.uid_foreign
+			WHERE m.uid_local = %s
+		", $uid);
 
-		if ( function_exists( 'akismet_init' ) ) {
-			$wpcom_api_key		= get_option( 'wordpress_api_key' );
+		$results				= $this->t3db->get_results($sql);
 
-			if ( ! empty( $wpcom_api_key ) ) {
-				global $akismet_api_host, $akismet_api_port;
+		$cats					= array();
 
-				// set remaining required values for akismet api
-				$content['user_ip']		= preg_replace( '/[^0-9., ]/', '', $_SERVER['REMOTE_ADDR'] );
-				$content['user_agent']	= $_SERVER['HTTP_USER_AGENT'];
-				$content['referrer']	= $_SERVER['HTTP_REFERER'];
-				$content['blog']		= get_option('home');
-
-				if ( empty( $content['referrer'] ) ) {
-					$content['referrer']	= get_permalink();
-				}
-
-				$query_str		= '';
-
-				foreach( $content as $key => $data ) {
-					if ( ! empty( $data ) ) {
-						$query_str	.= $key . '=' . urlencode(	stripslashes( $data ) ) . '&';
-					}
-				}
-
-				$response		= akismet_http_post( $query_str, $akismet_api_host, '/1.1/comment-check', $akismet_api_port );
-
-				if ( 'true' == $response[1] ) {
-					update_option( 'akismet_spam_count', get_option('akismet_spam_count') + 1 );
-					$is_spam		= true;
-				}
-			}
+		foreach( $results as $cat ) {
+			$cats[]				= $cat->title;
 		}
 
-		return $is_spam;
+		return $cats;
+	}
+
+	// Helper to make a JSON error message
+	function die_json_error_msg( $id, $message ) {
+		die( json_encode( array( 'error' => sprintf( __( '&quot;%1$s&quot; Post ID %2$s failed to be processed. The error message was: %3$s', 'typo3-importer' ), esc_html( get_the_title( $id ) ), $id, $message ) ) ) );
+	}
+
+
+	// Helper function to escape quotes in strings for use in Javascript
+	function esc_quotes( $string ) {
+		return str_replace( '"', '\"', $string );
+	}
+
+
+	/**
+	 * Returns string of a filename or string converted to a spaced extension
+	 * less header type string.
+	 *
+	 * @author Michael Cannon <michael@typo3vagabond.com>
+	 * @param string filename or arbitrary text
+	 * @return mixed string/boolean
+	 */
+	function cbMkReadableStr($str) {
+		if ( is_numeric( $str ) ) {
+			return number_format( $str );
+		}
+
+		if ( is_string($str) )
+		{
+			$clean_str = htmlspecialchars($str);
+
+			// remove file extension
+			$clean_str = preg_replace('/\.[[:alnum:]]+$/i', '', $clean_str);
+
+			// remove funky characters
+			$clean_str = preg_replace('/[^[:print:]]/', '_', $clean_str);
+
+			// Convert camelcase to underscore
+			$clean_str = preg_replace('/([[:alpha:]][a-z]+)/', "$1_", $clean_str);
+
+			// try to cactch N.N or the like
+			$clean_str = preg_replace('/([[:digit:]\.\-]+)/', "$1_", $clean_str);
+
+			// change underscore or underscore-hyphen to become space
+			$clean_str = preg_replace('/(_-|_)/', ' ', $clean_str);
+
+			// remove extra spaces
+			$clean_str = preg_replace('/ +/', ' ', $clean_str);
+
+			// convert stand alone s to 's
+			$clean_str = preg_replace('/ s /', "'s ", $clean_str);
+
+			// remove beg/end spaces
+			$clean_str = trim($clean_str);
+
+			// capitalize
+			$clean_str = ucwords($clean_str);
+
+			// restore previous entities facing &amp; issues
+			$clean_str = preg_replace( '/(&amp ;)([a-z0-9]+) ;/i'
+				, '&\2;'
+				, $clean_str
+			);
+
+			return $clean_str;
+		}
+
+		return false;
 	}
 }
+
 
 // Start up this plugin
 function TYPO3_Importer() {
 	global $TYPO3_Importer;
-	$TYPO3_Importer				= new TYPO3_Importer();
+	$TYPO3_Importer	= new TYPO3_Importer();
 }
 
 add_action( 'init', 'TYPO3_Importer' );
+
+?>

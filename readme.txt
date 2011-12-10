@@ -4,7 +4,7 @@ Donate link: http://typo3vagabond.com/about-typo3-vagabond/donate/
 Tags: typo3, importer
 Requires at least: 3.0.0
 Tested up to: 3.2.1
-Stable tag: 1.0.3
+Stable tag: 2.0.0
 
 Import tt_news and tx_comments from TYPO3 into WordPress.
 
@@ -15,17 +15,15 @@ Requires remote web and database access to the source TYPO3 instance. Images, fi
 
 Comments will be automatically tested for spam via Askimet if you have it configured.
 
-Inline and related images will be added to the Media Library. The first image found will be set as the Featured Image for the post. Inline images will have their source URLs updated. Related images will be converted to a [gallery] and inserted into the post about 2 paragraphs in.
+Inline and related images will be added to the Media Library. The first image found will be set as the Featured Image for the post. Inline images will have their source URLs updated. Related images will be converted to a [gallery] and appended or inserted into the post per your settings.
 
 Files will be appended to post content as 'Related Files'.
 
 It's possible to change post statuses on import. However, draft posts, will remain as drafts.
 
-If you accidentially import TYPO3 news and they've gone live, visit the importer and look for `Oops`. There's an option to convert imported posts to `Private` thereby removing from public view.
+If you import TYPO3 news and they've gone live when you didn't want them to, visit the Options screen and look for `Oops`. That's the option to convert imported posts to `Private` thereby removing them from public view.
 
 Finally, it's possible to delete prior imports and lost comments and attachments.
-
-TYPO3 Importer was modeled after the livejournal-importer plugin.
 
 == Installation ==
 1. Upload the `typo3-importer` folder to the `/wp-content/plugins/` directory
@@ -40,16 +38,31 @@ Yes. Any sponsoring would be greatly welcome. Please [donate](http://typo3vagabo
 1. Where to find TYPO3 Importer in Tools
 2. TYPO3 Importer settings
 3. TYPO3 news entries being imported
-4. TYPO3 comment entries being imported
 
 == Changelog ==
 = trunk =
+-
+
+= 2.0.0 =
 * Remove TYPO3 tx_comments approved requirement
 * Add askimet_spam_checker to comment importing
 * Position gallery shortcode in post content
 * Position more links in post content
 * Disallow single image galleries
--
+* Migrate importing to one-at-a-time model
+* Separate import and option screens
+* Configure related files and links header text, tag and wrapper
+* Enable custom news WHERE & ORDER clause
+* Enable specific news uid import/skip
+* Require TYPO3 access fields
+* Check that TYPO3 site exists on Website URL
+* Import related comments during each news import
+* Remove comment threading since TYPO3 didn't support it
+* Update screenshots
+* Create users with emails based upon author name and domain if no email given
+* Don't create users for authors with no email or name
+* Create top right meta links between options and import screens
+* Make best attempts to not duplicate authors as users
 
 = 1.0.2 =
 * Update description
