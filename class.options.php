@@ -736,6 +736,10 @@ EOD;
 		// TODO validate for
 		// TYPO3 db connectivity
 
+		if ( '' != $input['import_limit'] ) {
+			$input['import_limit']	= intval( $input['import_limit'] );
+		}
+		
 		if ( '' != $input['news_to_import'] ) {
 			$news_to_import		= $input['news_to_import'];
 			$news_to_import		= preg_replace( '#\s+#', '', $news_to_import);
