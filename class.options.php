@@ -52,6 +52,14 @@ class T3I_Settings {
 		
 		add_action( 'admin_print_scripts-' . $admin_page, array( &$this, 'scripts' ) );
 		add_action( 'admin_print_styles-' . $admin_page, array( &$this, 'styles' ) );
+
+		add_screen_meta_link(
+        	'typo3-importer-link',
+			__('TYPO3 Importer', 'typo3-importer'),
+			admin_url('tools.php?page=typo3-importer'),
+			$admin_page,
+			array('style' => 'font-weight: bold;')
+		);
 		
 	}
 	
@@ -697,8 +705,8 @@ EOD;
 	*/
 	public function styles() {
 		
-		wp_register_style( 'fsi-admin', plugins_url( 'settings.css', __FILE__ ) );
-		wp_enqueue_style( 'fsi-admin' );
+		wp_register_style( 't3i-admin', plugins_url( 'settings.css', __FILE__ ) );
+		wp_enqueue_style( 't3i-admin' );
 		
 	}
 	

@@ -3,7 +3,7 @@
 Plugin Name: TYPO3 Importer
 Plugin URI: http://wordpress.org/extend/plugins/typo3-importer/
 Description: Import tt_news and tx_comments from TYPO3 into WordPress.
-Version: 1.0.3
+Version: 2.0.0
 Author: Michael Cannon
 Author URI: http://typo3vagabond.com/contact-typo3vagabond/
 License: GPL2
@@ -31,6 +31,7 @@ include_once( 'lib/class.t3lib_div.php' );
 include_once( 'lib/class.t3lib_parsehtml.php' );
 include_once( 'lib/class.t3lib_softrefproc.php' );
 require_once( 'class.options.php' );
+require_once( 'screen-meta-links.php' );
 
 
 /**
@@ -74,25 +75,6 @@ class TYPO3_Importer {
 		
 		$this->options_link		= '<a href="'.get_admin_url().'options-general.php?page=t3i-options">'.__('TYPO3 Import Options', 'typo3-importer').'</a>';
         
-		// TODO Make the Settings page link to the link list, and vice versa
-		// from broken link
-		if ( false ) {
-        add_screen_meta_link(
-        	'fsi-settings-link',
-			__('Go to Settings', 'typo3-importer'),
-			admin_url('options-general.php?page=t3i-options'),
-			$links_page_hook,
-			array('style' => 'font-weight: bold;')
-		);
-		add_screen_meta_link(
-        	'fsi-links-page-link',
-			__('Go to Import', 'typo3-importer'),
-			admin_url('tools.php?page=typo3-importer'),
-			$options_page_hook,
-			array('style' => 'font-weight: bold;')
-		);
-		}
-		
 		$this->_create_db_client();
 		$this->_get_custom_sql();
 		$this->no_media_import	= get_t3i_options( 'no_media_import' );
@@ -115,9 +97,24 @@ class TYPO3_Importer {
 	// Register the management page
 	function add_admin_menu() {
 		$this->menu_id = add_management_page( __( 'TYPO3 Importer', 'typo3-importer' ), __( 'TYPO3 Importer', 'typo3-importer' ), 'manage_options', 'typo3-importer', array(&$this, 'user_interface') );
+
+		add_action( 'admin_print_styles-' . $this->menu_id, array( &$this, 'styles' ) );
+        add_screen_meta_link(
+        	't3i-options-link',
+			__('TYPO3 Importer Options', 'typo3-importer'),
+			admin_url('options-general.php?page=t3i-options'),
+			$this->menu_id,
+			array('style' => 'font-weight: bold;')
+		);
 	}
 
-
+	public function styles() {
+		
+		wp_register_style( 't3i-admin', plugins_url( 'settings.css', __FILE__ ) );
+		wp_enqueue_style( 't3i-admin' );
+		
+	}
+	
 	// Enqueue the needed Javascript and CSS
 	function admin_enqueues( $hook_suffix ) {
 		if ( $hook_suffix != $this->menu_id )
@@ -472,6 +469,9 @@ EOD;
 
 	</form>
 <?php
+		$copyright				= '<div class="copyright">Copyright %s <a href="http://typo3vagabond.com">TYPO3Vagabond.com.</a></div>';
+		$copyright				= sprintf( $copyright, date( 'Y' ) );
+		echo $copyright;
 	}
 
 
@@ -1091,13 +1091,25 @@ EOD;
 	}
 
 	function lookup_author( $author_email, $author ) {
-		// TODO have default author, author_email for empty
-		// TODO verify ideas for unique emails work
-		$username				= $this->_create_username( $author );
+		$author					= trim( $author );
+		$author					= preg_replace( "#^By:? #i", '', $author );
+		$author					= ucwords( strtolower( $author ) );
+		$author					= str_replace( ' And ', ' and ', $author );
+		$author_email			= trim( $author_email );
+
+		// there's no information to create an author from
+		if ( '' == $author_email && '' == $author )
+			return false;
 
 		// create unique emails for no email authors
-		if ( '' == $author_email ) {
-			$author_email		= $username . '@' . preg_replace( '#https?://#', $this->typo3_url, '' );
+		if ( '' != $author_email ) {
+			$no_email			= false;
+			$username			= $this->_create_username( $author );
+		} else {
+			$no_email			= true;
+			$domain				= preg_replace( '#(https?://)([^/]+)/#', '\2', $this->typo3_url );
+			$username			= $this->_create_username( $author, $domain );
+			$author_email		= $username . '@' . $domain;
 		}
 
 		$post_author      		= email_exists( $author_email );
@@ -1105,9 +1117,11 @@ EOD;
 		if ( $post_author )
 			return $post_author;
 
-		$url					= preg_replace( '#^[^@]+@#', 'http://', $author_email );
+		if ( ! $no_email )
+			$url				= preg_replace( '#^[^@]+@#', 'http://', $author_email );
 
 		$password				= wp_generate_password();
+		$author_arr				= explode( ' ', $author );
 		$first					= array_shift( $author_arr );
 		$last					= implode( ' ', $author_arr );
 
@@ -1116,6 +1130,7 @@ EOD;
 			'user_email'		=> $author_email,
 			'user_url'			=> $url,
 			'display_name'		=> $author,
+			'nickname'			=> $author,
 			'user_pass'			=> $password,
 			'first_name'		=> $first,
 			'last_name'			=> $last,
@@ -1131,7 +1146,7 @@ EOD;
 		}
 	}
 
-	function _create_username( $author ) {
+	function _create_username( $author, $domain = false ) {
 		$author					= strtolower( $author );
 		$author_arr				= explode( ' ', $author );
 		$username_arr			= array();
@@ -1146,6 +1161,16 @@ EOD;
 
 		$username_orig			= $username;
 		$offset					= 1;
+
+		if ( $domain ) {
+			$email				= $username . '@' . $domain;
+			if ( email_exists( $email ) )
+				return $username;
+		}
+
+		if ( ! username_exists( $username ) )
+			return $username;
+
 		while ( username_exists( $username ) ) {
 			$username			= $username_orig . '.' . $offset;
 			$offset++;

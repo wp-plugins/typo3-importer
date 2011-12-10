@@ -56,6 +56,10 @@ Yes. Any sponsoring would be greatly welcome. Please [donate](http://typo3vagabo
 * Import related comments during each news import
 * Remove comment threading since TYPO3 didn't support it
 * Update screenshots
+* Create users with emails based upon author name and domain if no email given
+* Don't create users for authors with no email or name
+* Create top right meta links between options and import screens
+* Make best attempts to not duplicate authors as users
 -
 
 = 1.0.2 =
