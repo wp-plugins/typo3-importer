@@ -467,7 +467,7 @@ EOD;
 		
 		$this->settings['related_files_wrap'] = array(
 			'title'   => __( 'Related Files Wrap' , 'typo3-importer'),
-			'desc'   => __( 'Useful for adding membership oriented shortcodes around premium content. e.g. [paid]|[/paid]' , 'typo3-importer'),
+			'desc'   => __( 'Useful for adding membership oriented shortcodes around premium content. "|" separates before and after content. e.g. [paid]|[/paid]' , 'typo3-importer'),
 			'type'	=> 'text',
 			'section' => 'general'
 		);
@@ -497,7 +497,7 @@ EOD;
 		
 		$this->settings['related_links_wrap'] = array(
 			'title'   => __( 'Related Links Wrap' , 'typo3-importer'),
-			'desc'   => __( 'Useful for adding membership oriented shortcodes around premium content. e.g. [paid]|[/paid]' , 'typo3-importer'),
+			'desc'   => __( 'Useful for adding membership oriented shortcodes around premium content. "|" separates before and after content. e.g. [member]|[/member]' , 'typo3-importer'),
 			'section' => 'general'
 		);
 		$this->settings['approve_comments'] = array(

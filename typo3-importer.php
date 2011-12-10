@@ -170,7 +170,7 @@ EOD;
 						{$this->news_custom_order}
 					";
 
-					$limit			= (int) get_t3i_options( 'import_limit' );
+					$limit			= get_t3i_options( 'import_limit' );
 					if ( $limit )
 						$query		.= ' LIMIT ' . $limit;
 
