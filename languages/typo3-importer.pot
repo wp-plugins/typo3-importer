@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TYPO3 Importer 2.0.1\n"
 "Report-Msgid-Bugs-To: http://wordpress.org/tag/typo3-importer\n"
-"POT-Creation-Date: 2011-12-10 11:15:15+00:00\n"
+"POT-Creation-Date: 2011-12-10 11:34:00+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -21,7 +21,7 @@ msgid "News Selection"
 msgstr ""
 
 #: class.options.php:28
-msgid "Import Options"
+msgid "Import Settings"
 msgstr ""
 
 #: class.options.php:29
@@ -45,11 +45,7 @@ msgid "About TYPO3 Importer"
 msgstr ""
 
 #: class.options.php:51 class.options.php:112 typo3-importer.php:104
-msgid "TYPO3 Importer Options"
-msgstr ""
-
-#: class.options.php:51 typo3-importer.php:76
-msgid "TYPO3 Import Options"
+msgid "TYPO3 Importer Settings"
 msgstr ""
 
 #. #-#-#-#-#  typo3-importer.pot (TYPO3 Importer 2.0.1)  #-#-#-#-#
@@ -391,6 +387,10 @@ msgstr ""
 msgid "Cheatin&#8217; uh?"
 msgstr ""
 
+#: typo3-importer.php:76
+msgid "Settings"
+msgstr ""
+
 #: typo3-importer.php:89
 msgid "Import"
 msgstr ""
@@ -525,7 +525,7 @@ msgstr ""
 #: typo3-importer.php:458
 msgid ""
 "If you import TYPO3 news and they've gone live when you didn't want them to, "
-"visit the Options screen and look for `Oops`. That's the option to convert "
+"visit the Settings screen and look for `Oops`. That's the option to convert "
 "imported posts to `Private` thereby removing them from public view."
 msgstr ""
 
@@ -553,7 +553,7 @@ msgid ""
 "successfully processed in %4$s seconds."
 msgstr ""
 
-#: typo3-importer.php:1420
+#: typo3-importer.php:1422
 msgid ""
 "&quot;%1$s&quot; Post ID %2$s failed to be processed. The error message was: "
 "%3$s"
