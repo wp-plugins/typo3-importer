@@ -8,7 +8,7 @@
 class T3I_Settings {
 	
 	private $sections;
-	private $checkboxes;
+	private $reset;
 	private $settings;
 	private $required			= ' <span style="color: red;">*</span>';
 	
@@ -19,7 +19,7 @@ class T3I_Settings {
 		global $wpdb;
 		
 		// This will keep track of the checkbox options for the validate_settings function.
-		$this->checkboxes		= array();
+		$this->reset		= array();
 		$this->settings			= array();
 		$this->get_settings();
 		
@@ -48,7 +48,7 @@ class T3I_Settings {
 	 */
 	public function add_pages() {
 		
-		$admin_page = add_options_page( __( 'TYPO3 Importer Settings', 'typo3-importer'), __( 'TYPO3 Importer Settings', 'typo3-importer'), 'manage_options', 't3i-options', array( &$this, 'display_page' ) );
+		$admin_page = add_options_page( __( 'TYPO3 Importer Settings', 'typo3-importer'), __( 'TYPO3 Importer', 'typo3-importer'), 'manage_options', 't3i-options', array( &$this, 'display_page' ) );
 		
 		add_action( 'admin_print_scripts-' . $admin_page, array( &$this, 'scripts' ) );
 		add_action( 'admin_print_styles-' . $admin_page, array( &$this, 'styles' ) );
@@ -93,8 +93,7 @@ class T3I_Settings {
 			'req'		=> $req
 		);
 		
-		if ( $type == 'checkbox' )
-			$this->checkboxes[] = $id;
+		$this->reset[$id] = $std;
 
 		if ( '' != $req )
 			$req	= $this->required;
@@ -826,15 +825,12 @@ EOD;
 			return $input;
 		}
 
-		if ( ! isset( $input['reset_plugin'] ) ) {
-			$options = get_option( 't3i_options' );
-			
-			foreach ( $this->checkboxes as $id ) {
-				if ( isset( $options[$id] ) && ! isset( $input[$id] ) )
-					unset( $options[$id] );
+		if ( $input['reset_plugin'] ) {
+			foreach ( $this->reset as $id => $std ) {
+				$input[$id]	= $std;
 			}
 			
-			return $input;
+			unset( $input['reset_plugin'] );
 		}
 
 		return $input;
