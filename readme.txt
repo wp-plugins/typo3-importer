@@ -130,6 +130,7 @@ Yes. Any sponsoring would be greatly welcome. Please [donate](http://typo3vagabo
 
 == Changelog ==
 = trunk =
+* screen-meta-links endif fix
 -
 
 = 2.0.2 =
