@@ -120,7 +120,7 @@ Inline and related images will be added to the Media Library. The first image fo
 1. Import via Tools > TYPO3 Importer
 
 == Frequently Asked Questions ==
-= Can I sponsor importing TYPO3 pages? =
+= Can I sponsor importing TYPO3 ______? =
 Yes. Any sponsoring would be greatly welcome. Please [donate](http://typo3vagabond.com/about-typo3-vagabond/donate/ "Help sponsor TYPO3 Importer") and let me know what's wanted
 
 == Screenshots ==
