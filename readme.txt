@@ -80,7 +80,7 @@ Inline and related images will be added to the Media Library. The first image fo
 	* H3
 	* H4
 	* H5
-	* H6'
+	* H6
 * Related Files Wrap
 * Related Links Header
 * Related Links Header Tag
@@ -116,7 +116,7 @@ Inline and related images will be added to the Media Library. The first image fo
 == Installation ==
 1. Upload the `typo3-importer` folder to the `/wp-content/plugins/` directory
 1. Activate the plugin through the 'Plugins' menu in WordPress
-1. Set TYPO3 access via Settings > TYPO3 Import Options
+1. Set TYPO3 access via Settings > TYPO3 Importer
 1. Import via Tools > TYPO3 Importer
 
 == Frequently Asked Questions ==
@@ -132,6 +132,7 @@ Yes. Any sponsoring would be greatly welcome. Please [donate](http://typo3vagabo
 = trunk =
 * screen-meta-links endif fix
 * Make okay for WordPress 3.3
+* Insert and Update posts
 -
 
 = 2.0.2 =

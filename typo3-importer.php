@@ -697,6 +697,7 @@ EOD;
 
 		// Check if comments are closed on this post
 		$comment_status			= $news['props']['comments'];
+		$ping_status			= 'closed';
 
 		// Add excerpt
 		$post_excerpt			= ! empty( $news['props']['excerpt'] ) ? $news['props']['excerpt'] : '';
@@ -705,15 +706,18 @@ EOD;
 		$post_name				= $news['props']['slug'];
 
 		$post_id				= post_exists( $post_title, $post_content, $post_date );
-		if ( ! $post_id ) {
-			$postdata			= compact( 'post_author', 'post_date', 'post_content', 'post_title', 'post_status', 'post_password', 'tags_input', 'comment_status', 'post_excerpt', 'post_category', 'post_name' );
-			// @ref http://codex.wordpress.org/Function_Reference/wp_insert_post
-			$post_id			= wp_insert_post( $postdata, true );
+		$postdata				= compact( 'post_author', 'post_date', 'post_content', 'post_title', 'post_status', 'post_password', 'tags_input', 'comment_status', 'ping_status', 'post_excerpt', 'post_category', 'post_name' );
 
-			if ( is_wp_error( $post_id ) ) {
-				if ( 'empty_content' == $post_id->getErrorCode() )
-					return; // Silent skip on "empty" posts
-			}
+		if ( ! $post_id ) {
+			$post_id			= wp_insert_post( $postdata, true );
+		} else {
+			$postdata['ID']		= $post_id;
+			$post_id			= wp_update_post( $postdata );
+		}
+
+		if ( is_wp_error( $post_id ) ) {
+			if ( 'empty_content' == $post_id->getErrorCode() )
+				return; // Silent skip on "empty" posts
 		}
 
 		return $post_id;
