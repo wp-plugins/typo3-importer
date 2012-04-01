@@ -725,7 +725,7 @@ EOD;
 
 	function insert_postmeta( $post_id, $post ) {
 		// Need the original TYPO3 id for comments
-		add_post_meta( $post_id, 't3:tt_news.uid', $post['itemid'] );
+		update_post_meta( $post_id, 't3:tt_news.uid', $post['itemid'] );
 
 		foreach ( $post['props'] as $prop => $value ) {
 			if ( ! empty( $post['props'][$prop] ) ) {
@@ -734,23 +734,23 @@ EOD;
 				switch ( $prop ) {
 					case 'slug':
 						// save the permalink on TYPO3 in case we want to link back or something
-						add_post_meta( $post_id, 't3:tt_news.url', $value );
+						update_post_meta( $post_id, 't3:tt_news.url', $value );
 						break;
 
 					case 'excerpt':
-						add_post_meta( $post_id, '_aioseop_description', $value );
-						add_post_meta( $post_id, '_headspace_description', $value );
-						add_post_meta( $post_id, '_yoast_wpseo_metadesc', $value );
-						add_post_meta( $post_id, 'bizzthemes_description', $value );
-						add_post_meta( $post_id, 'thesis_description', $value );
+						update_post_meta( $post_id, '_aioseop_description', $value );
+						update_post_meta( $post_id, '_headspace_description', $value );
+						update_post_meta( $post_id, '_yoast_wpseo_metadesc', $value );
+						update_post_meta( $post_id, 'bizzthemes_description', $value );
+						update_post_meta( $post_id, 'thesis_description', $value );
 						break;
 
 					case 'keywords':
-						add_post_meta( $post_id, '_aioseop_keywords', $value );
-						add_post_meta( $post_id, '_headspace_keywords', $value );
-						add_post_meta( $post_id, '_yoast_wpseo_metakeywords', $value );
-						add_post_meta( $post_id, 'bizzthemes_keywords', $value );
-						add_post_meta( $post_id, 'thesis_keywords', $value );
+						update_post_meta( $post_id, '_aioseop_keywords', $value );
+						update_post_meta( $post_id, '_headspace_keywords', $value );
+						update_post_meta( $post_id, '_yoast_wpseo_metakeywords', $value );
+						update_post_meta( $post_id, 'bizzthemes_keywords', $value );
+						update_post_meta( $post_id, 'thesis_keywords', $value );
 						break;
 
 					case 'image':
@@ -776,7 +776,7 @@ EOD;
 				}
 
 				if ( $add_post_meta ) {
-					add_post_meta( $post_id, 't3:tt_news.' . $prop, $value );
+					update_post_meta( $post_id, 't3:tt_news.' . $prop, $value );
 				}
 			}
 		}
