@@ -842,9 +842,15 @@ EOD;
 		if ( filter_var( $url, FILTER_VALIDATE_URL ) ) {
 			// pull site's TYPO3 admin url, http://example.com/typo3
 			$typo3_url			= preg_replace( '#$#', 'typo3/index.php', $url );
+			$opts				= array(
+				'http'			=>array(
+					'header'	=> "User-Agent: Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.9) Gecko/20071025 Firefox/2.0.0.9\r\n"
+				)
+			);
+			$context			= stream_context_create($opts);
 
 			// check for TYPO3 header code
-			$html				= @file_get_contents( $typo3_url );
+			$html				= file_get_contents( $typo3_url, false, $context );
 
 			// look for `<meta name="generator" content="TYPO3`
 			// looking for meta doesn't work as TYPO3 throws browser error
