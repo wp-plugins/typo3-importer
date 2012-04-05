@@ -747,6 +747,10 @@ EOD;
 			add_settings_error( 't3i-options', 'news_to_import', __( 'News to Import is required' , 'typo3-importer') );
 		}
 
+		if ( 'AND ' != substr( $input['news_custom_where'], 0, 4 ) ) {
+			add_settings_error( 't3i-options', 'news_custom_where', __( 'The first part must be AND ' , 'typo3-importer') );
+		}
+
 		if ( '' != $input['import_limit'] ) {
 			$input['import_limit']	= intval( $input['import_limit'] );
 		}
