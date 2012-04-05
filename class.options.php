@@ -748,7 +748,7 @@ EOD;
 		}
 
 		if ( 'AND ' != substr( $input['news_custom_where'], 0, 4 ) ) {
-			add_settings_error( 't3i-options', 'news_custom_where', __( 'The first part must be AND ' , 'typo3-importer') );
+			add_settings_error( 't3i-options', 'news_custom_where', __( 'News WHERE Clause must begin with "AND "' , 'typo3-importer') );
 		}
 
 		if ( '' != $input['import_limit'] ) {
