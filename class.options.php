@@ -803,6 +803,12 @@ EOD;
 			add_settings_error( 't3i-options', 't3db_password', __('Database Password is required', 'typo3-importer') );
 		}
 
+		$t3db					= new wpdb( $input['t3db_username'], $input['t3db_password'], $input['t3db_name'], $input['t3db_host'] );
+
+		if ( ! $t3db ) {
+			add_settings_error( 't3i-options', 't3db', __('Unable to connect to the database', 'typo3-importer') );
+		}
+
 		if ( isset( $input['delete'] ) && $input['delete'] ) {
 			switch ( $input['delete'] ) {
 				case 'imports' :
