@@ -776,10 +776,8 @@ EOD;
 		}
 
 		$t3db					= new wpdb( $input['t3db_username'], $input['t3db_password'], $input['t3db_name'], $input['t3db_host'] );
-		var_dump($t3db); echo '<br />'; echo '' . __LINE__ . ':' . basename( __FILE__ )  . '<br />';	
-		exit( __LINE__ . ':' . basename( __FILE__ ) . " ERROR<br />\n" );	
 
-		if ( ! $t3db ) {
+		if ( ! is_resource( $t3db->dbh ) ) {
 			add_settings_error( 't3i-options', 't3db', __('Unable to connect to the database', 'typo3-importer') );
 		}
 
