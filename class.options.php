@@ -578,7 +578,7 @@ EOD;
 		// selection
 		$this->settings['news_custom_where'] = array(
 			'title'   => __( 'News WHERE Clause' , 'typo3-importer'),
-			'desc'    => __( "WHERE clause used to select news records from TYPO3. e.g.: AND tt_news.deleted = 0 AND tt_news.pid > 0" , 'typo3-importer'),
+			'desc'    => __( "WHERE clause used to select news records from TYPO3. 'AND' must be the first part. e.g.: AND tt_news.deleted = 0 AND tt_news.pid > 0" , 'typo3-importer'),
 			'std'     => 'AND tt_news.deleted = 0 AND tt_news.pid > 0',
 			'type'	=> 'text',
 			'section' => 'selection'
