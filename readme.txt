@@ -4,7 +4,7 @@ Donate link: http://typo3vagabond.com/about-typo3-vagabond/donate/
 Tags: typo3, importer
 Requires at least: 3.0.0
 Tested up to: 3.3
-Stable tag: 2.0.3
+Stable tag: 2.0.4
 
 Easily import thousands of tt_news and tx_comments from TYPO3 into WordPress.
 
@@ -131,6 +131,11 @@ Yes. Any sponsoring would be greatly welcome. Please [donate](http://typo3vagabo
 == Changelog ==
 = trunk =
 -
+
+= 2.0.4 =
+* Added error messaging for incorrect News WHERE Clause
+* Added database connection validation
+* Update contact/donate information
 
 = 2.0.3 =
 * Add User-Agent for TYPO3 website check
