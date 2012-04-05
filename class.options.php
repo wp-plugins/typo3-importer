@@ -740,8 +740,48 @@ EOD;
 	*/
 	public function validate_settings( $input ) {
 		
-		// TODO validate for
+		if ( '' == $input['typo3_url'] ) {
+			add_settings_error( 't3i-options', 'typo3_url', __('Website URL is required', 'typo3-importer') );
+		} else {
+			$typo3_url			= $input['typo3_url'];
+			// append / if needed and save to options
+			$typo3_url	= preg_replace('#(/{0,})?$#', '/',  $typo3_url);
+			// silly // fix, above regex no matter what doesn't seem to work on 
+			// this
+			$typo3_url	= preg_replace('#//$#', '/',  $typo3_url);
+			// Store details for later
+			$input['typo3_url']	= $typo3_url;
+
+			// check for typo3_url validity & reachability
+			if ( ! $this->_is_typo3_website( $typo3_url ) ) {
+				add_settings_error( 't3i-options', 'typo3_url', __( "TYPO3 site not found at given Website URL", 'typo3-importer' ) );
+			}
+		}
+		
 		// TYPO3 db connectivity
+		if ( '' == $input['t3db_host'] ) {
+			add_settings_error( 't3i-options', 't3db_host', __('Database Host is required', 'typo3-importer') );
+		}
+		
+		if ( '' == $input['t3db_name'] ) {
+			add_settings_error( 't3i-options', 't3db_name', __('Database Name is required', 'typo3-importer') );
+		}
+		
+		if ( '' == $input['t3db_username'] ) {
+			add_settings_error( 't3i-options', 't3db_username', __('Database Username is required', 'typo3-importer') );
+		}
+		
+		if ( '' == $input['t3db_password'] ) {
+			add_settings_error( 't3i-options', 't3db_password', __('Database Password is required', 'typo3-importer') );
+		}
+
+		$t3db					= new wpdb( $input['t3db_username'], $input['t3db_password'], $input['t3db_name'], $input['t3db_host'] );
+		var_dump($t3db); echo '<br />'; echo '' . __LINE__ . ':' . basename( __FILE__ )  . '<br />';	
+		exit( __LINE__ . ':' . basename( __FILE__ ) . " ERROR<br />\n" );	
+
+		if ( ! $t3db ) {
+			add_settings_error( 't3i-options', 't3db', __('Unable to connect to the database', 'typo3-importer') );
+		}
 
 		if ( $input['debug_mode'] && '' == $input['news_to_import'] ) {
 			add_settings_error( 't3i-options', 'news_to_import', __( 'News to Import is required' , 'typo3-importer') );
@@ -769,46 +809,6 @@ EOD;
 			$input['news_to_skip']	= $news_to_skip;
 		}
 		
-		if ( '' == $input['typo3_url'] ) {
-			add_settings_error( 't3i-options', 'typo3_url', __('Website URL is required', 'typo3-importer') );
-		} else {
-			$typo3_url			= $input['typo3_url'];
-			// append / if needed and save to options
-			$typo3_url	= preg_replace('#(/{0,})?$#', '/',  $typo3_url);
-			// silly // fix, above regex no matter what doesn't seem to work on 
-			// this
-			$typo3_url	= preg_replace('#//$#', '/',  $typo3_url);
-			// Store details for later
-			$input['typo3_url']	= $typo3_url;
-
-			// check for typo3_url validity & reachability
-			if ( ! $this->_is_typo3_website( $typo3_url ) ) {
-				add_settings_error( 't3i-options', 'typo3_url', __( "TYPO3 site not found at given Website URL", 'typo3-importer' ) );
-			}
-		}
-		
-		if ( '' == $input['t3db_host'] ) {
-			add_settings_error( 't3i-options', 't3db_host', __('Database Host is required', 'typo3-importer') );
-		}
-		
-		if ( '' == $input['t3db_name'] ) {
-			add_settings_error( 't3i-options', 't3db_name', __('Database Name is required', 'typo3-importer') );
-		}
-		
-		if ( '' == $input['t3db_username'] ) {
-			add_settings_error( 't3i-options', 't3db_username', __('Database Username is required', 'typo3-importer') );
-		}
-		
-		if ( '' == $input['t3db_password'] ) {
-			add_settings_error( 't3i-options', 't3db_password', __('Database Password is required', 'typo3-importer') );
-		}
-
-		$t3db					= new wpdb( $input['t3db_username'], $input['t3db_password'], $input['t3db_name'], $input['t3db_host'] );
-
-		if ( ! $t3db ) {
-			add_settings_error( 't3i-options', 't3db', __('Unable to connect to the database', 'typo3-importer') );
-		}
-
 		if ( isset( $input['delete'] ) && $input['delete'] ) {
 			switch ( $input['delete'] ) {
 				case 'imports' :
