@@ -124,12 +124,8 @@ Inline and related images will be added to the Media Library. The first image fo
 
 If TYPO3 is reached at http://example.com/typo3, then the correct website URL is http://example.com.
 
-Now, if you're running at least PHP 5.2 and the plugin reports that the website URL doesn't exist, it's possible that your server or web host doesn't allow outbound connections using PHP.
-
-I'm working on updating the TYPO3 Importer to detect this scenario.
-
 = Why is my website URL correct, but plugin says not? =
-Do you have at least PHP 5.2 installed?
+Do you have at least PHP 5.3.3 or PHP 5.2.14 installed?
 
 = Can I sponsor importing TYPO3 ______? =
 Yes. Any sponsoring would be greatly welcome. Please [donate](http://typo3vagabond.com/about-typo3-vagabond/donate/ "Help sponsor TYPO3 Importer") and let me know what's wanted
