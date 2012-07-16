@@ -3,7 +3,7 @@
 Plugin Name: TYPO3 Importer
 Plugin URI: http://wordpress.org/extend/plugins/typo3-importer/
 Description: Import tt_news and tx_comments from TYPO3 into WordPress.
-Version: 2.0.4
+Version: 2.0.5
 Author: Michael Cannon
 Author URI: http://typo3vagabond.com/about-typo3-vagabond/hire-michael/
 License: GPL2
@@ -1534,6 +1534,6 @@ function TYPO3_Importer() {
 	$TYPO3_Importer	= new TYPO3_Importer();
 }
 
-add_action( 'init', 'TYPO3_Importer' );
+add_action( 'admin_init', 'TYPO3_Importer' );
 
 ?>
