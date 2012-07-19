@@ -1530,6 +1530,9 @@ EOD;
 
 // Start up this plugin
 function TYPO3_Importer() {
+	if ( ! is_admin() )
+		return;
+
 	global $TYPO3_Importer;
 	$TYPO3_Importer	= new TYPO3_Importer();
 }
