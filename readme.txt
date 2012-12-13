@@ -144,6 +144,7 @@ Yes. Any sponsoring would be greatly welcome. Please [donate](http://aihr.us/abo
 * Add Categories to Import
 * Call initialization methods when needed, than always
 * Skip URL check
+* Update POT
 * Verbiage cleanup
 
 = 2.1.0 =
