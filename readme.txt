@@ -4,7 +4,7 @@ Donate link: http://aihr.us/about-aihrus/donate/
 Tags: typo3, import
 Requires at least: 3.0.0
 Tested up to: 3.5
-Stable tag: 2.0.6
+Stable tag: 2.1.0
 
 Easily import thousands of tt_news and tx_comments from TYPO3 into WordPress.
 
@@ -139,6 +139,7 @@ Yes. Any sponsoring would be greatly welcome. Please [donate](http://aihr.us/abo
 = trunk =
 * TBD
 
+= 2.1.0 =
 * Aihrus branding 
 
 = 2.0.6 =
