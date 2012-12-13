@@ -1,27 +1,27 @@
 <?php
 /*
-Plugin Name: TYPO3 Importer
-Plugin URI: http://wordpress.org/extend/plugins/typo3-importer/
-Description: Import tt_news and tx_comments from TYPO3 into WordPress.
-Version: 2.0.6
-Author: Michael Cannon
-Author URI: http://typo3vagabond.com/about-typo3-vagabond/hire-michael/
-License: GPL2
+	Plugin Name: TYPO3 Importer
+	Plugin URI: http://wordpress.org/extend/plugins/typo3-importer/
+	Description: Import tt_news and tx_comments from TYPO3 into WordPress.
+	Version: 2.0.6
+	Author: Michael Cannon
+	Author URI: http://aihr.us/about-aihrus/michael-cannons-resume/
+	License: GPLv2 or later
 
-Copyright 2012  Michael Cannon  (email : michael@typo3vagabond.com)
+	Copyright 2012  Michael Cannon  (email : mc@aihr.us)
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License, version 2, as 
-published by the Free Software Foundation.
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License, version 2, as 
+	published by the Free Software Foundation.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+	You should have received a copy of the GNU General Public License
+	along with this program; if not, write to the Free Software
+	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 
@@ -473,7 +473,7 @@ EOD;
 
 	</form>
 <?php
-		$copyright				= '<div class="copyright">Copyright %s <a href="http://typo3vagabond.com">TYPO3Vagabond.com.</a></div>';
+		$copyright				= '<div class="copyright">Copyright %s <a href="http://aihr.us">Aihr.us.</a></div>';
 		$copyright				= sprintf( $copyright, date( 'Y' ) );
 		echo $copyright;
 	}
@@ -1474,7 +1474,7 @@ EOD;
 	 * Returns string of a filename or string converted to a spaced extension
 	 * less header type string.
 	 *
-	 * @author Michael Cannon <michael@typo3vagabond.com>
+	 * @author Michael Cannon <mc@aihr.us>
 	 * @param string filename or arbitrary text
 	 * @return mixed string/boolean
 	 */

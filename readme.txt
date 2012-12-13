@@ -1,9 +1,9 @@
 === TYPO3 Importer ===
 Contributors: comprock
-Donate link: http://typo3vagabond.com/about-typo3-vagabond/donate/
-Tags: typo3, importer
+Donate link: http://aihr.us/about-aihrus/donate/
+Tags: typo3, import
 Requires at least: 3.0.0
-Tested up to: 3.3
+Tested up to: 3.5
 Stable tag: 2.0.6
 
 Easily import thousands of tt_news and tx_comments from TYPO3 into WordPress.
@@ -128,7 +128,7 @@ If TYPO3 is reached at http://example.com/typo3, then the correct website URL is
 Do you have at least PHP 5.3.3 or PHP 5.2.14 installed?
 
 = Can I sponsor importing TYPO3 ______? =
-Yes. Any sponsoring would be greatly welcome. Please [donate](http://typo3vagabond.com/about-typo3-vagabond/donate/ "Help sponsor TYPO3 Importer") and let me know what's wanted
+Yes. Any sponsoring would be greatly welcome. Please [donate](http://aihr.us/about-aihrus/donate/ "Help sponsor TYPO3 Importer") and let me know what's wanted
 
 == Screenshots ==
 1. Where to find TYPO3 Importer in Tools
@@ -137,7 +137,9 @@ Yes. Any sponsoring would be greatly welcome. Please [donate](http://typo3vagabo
 
 == Changelog ==
 = trunk =
--
+* TBD
+
+* Aihrus branding 
 
 = 2.0.6 =
 * Disable admin_init
