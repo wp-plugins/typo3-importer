@@ -72,11 +72,14 @@ class TYPO3_Importer {
 		add_action( 'admin_enqueue_scripts', array( &$this, 'admin_enqueues' ) );
 		add_action( 'wp_ajax_importtypo3news', array( &$this, 'ajax_process_news' ) );
 		add_filter( 'plugin_action_links', array( &$this, 'add_plugin_action_links' ), 10, 2 );
+		add_filter( 'admin_init', array( &$this, 'admin_init' ) );
 		
 		$this->options_link		= '<a href="'.get_admin_url().'options-general.php?page=t3i-options">'.__('Settings', 'typo3-importer').'</a>';
         
-		$this->_create_db_client();
-		$this->_get_custom_sql();
+	}
+
+
+	function admin_init() {
 		$this->no_media_import	= get_t3i_options( 'no_media_import' );
 	}
 
@@ -132,6 +135,7 @@ class TYPO3_Importer {
 
 	// The user interface plus thumbnail regenerator
 	function user_interface() {
+		$this->_get_custom_sql();
 
 		echo <<<EOD
 <div id="message" class="updated fade" style="display:none"></div>
@@ -232,11 +236,39 @@ EOD;
 	}
 
 	function _get_custom_sql() {
+		$this->_create_db_client();
+
 		$this->news_custom_where	= get_t3i_options( 'news_custom_where' );
 		$this->news_custom_order	= get_t3i_options( 'news_custom_order' );
 
-		$this->news_to_import		= get_t3i_options( 'news_to_import' );
-		if ( '' == $this->news_to_import ) {
+		$this->cats_to_import		= get_t3i_options( 'cats_to_import' );
+		if ( ! empty( $this->cats_to_import ) ) {
+			$news_uids				= array();
+
+			$query					= "
+				SELECT uid_local
+				FROM tt_news_cat_mm
+				WHERE 1 = 1
+				AND uid_foreign IN ( {$this->cats_to_import} )
+				GROUP BY uid_local
+			";
+
+			$limit					= get_t3i_options( 'import_limit' );
+			if ( $limit )
+				$query				.= ' LIMIT ' . $limit;
+
+			$results				= $this->t3db->get_results( $query );
+
+			foreach ( $results as $news ) {
+				$news_uids[]		= $news->uid_local;
+			}
+
+			$this->news_to_import	= implode( ',', $news_uids );
+		} else {
+			$this->news_to_import	= get_t3i_options( 'news_to_import' );
+		}
+
+		if ( empty( $this->news_to_import ) ) {
 			// poll already imported and skip those
 			$done_uids			= $this->wpdb->get_col( "SELECT meta_value FROM {$this->wpdb->postmeta} WHERE meta_key = 't3:tt_news.uid'" );
 
@@ -481,6 +513,8 @@ EOD;
 
 	// Process a single image ID (this is an AJAX handler)
 	function ajax_process_news() {
+		$this->_create_db_client();
+
 		if ( ! get_t3i_options( 'debug_mode' ) ) {
 			error_reporting( 0 ); // Don't break the JSON result
 			header( 'Content-type: application/json' );
@@ -1136,7 +1170,7 @@ EOD;
 		$author_email			= trim( $author_email );
 
 		// there's no information to create an author from
-		if ( '' == $author_email && '' == $author ) {
+		if ( empty( $author_email ) && empty( $author ) ) {
 			$default_author		= get_t3i_options( 'default_author' );
 
 			if ( $default_author )

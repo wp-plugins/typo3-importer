@@ -27,7 +27,7 @@ class T3I_Settings {
 		$this->sections['selection']	= __( 'News Selection', 'typo3-importer');
 		$this->sections['general']	= __( 'Import Settings', 'typo3-importer');
 		$this->sections['testing']	= __( 'Testing Options', 'typo3-importer');
-		$this->sections['oops']		= __( 'Oops...', 'typo3-importer');
+		$this->sections['oops']		= __( 'Oops…', 'typo3-importer');
 		$this->sections['reset']	= __( 'Reset/Restore', 'typo3-importer');
 		// $this->sections['TBI']		= __( 'Not Implemented', 'typo3-importer');
 		$this->sections['about']	= __( 'About TYPO3 Importer', 'typo3-importer');
@@ -207,7 +207,7 @@ EOD;
 		echo					<<<EOD
 			<div style="width: 50%;">
 				<p><img class="alignright size-medium" title="Michael in Red Square, Moscow, Russia" src="/wp-content/plugins/typo3-importer/media/michael-cannon-red-square-300x2251.jpg" alt="Michael in Red Square, Moscow, Russia" width="300" height="225" /><a href="http://wordpress.org/extend/plugins/typo3-importer/">TYPO3 Importer</a> is by <a href="http://aihr.us/about-aihrus/michael-cannons-resume/">Michael Cannon</a>.</p>
-				<p>Hello, I'm Michael Cannon, <a title="Lot's of stuff about Peichi Liu..." href="http://peimic.com/t/peichi-liu/">Peichi's</a> smiling man, an adventurous <a title="Water rat" href="http://www.chinesehoroscope.org/chinese_zodiac/rat/" target="_blank">water-rat</a>, <a title="Aihrus – ideas programmed real" href="http://aihr.us/">CTO</a>, <a title="Road biker, cyclist, biking; whatever you call, I love to ride" href="http://peimic.com/c/biking/">cyclist</a>, <a title="Michael's poetic like literary ramblings" href="http://peimic.com/t/poetry/">poet</a>, <a title="World Wide Opportunities on Organic Farms" href="http://peimic.com/t/WWOOF/">WWOOF'er</a> and <a title="My traveled to country list, is more than my age." href="http://peimic.com/c/travel/">world traveler</a>.</p>
+				<p>Hello, I'm Michael Cannon, <a title="Lot's of stuff about Peichi Liu…" href="http://peimic.com/t/peichi-liu/">Peichi's</a> smiling man, an adventurous <a title="Water rat" href="http://www.chinesehoroscope.org/chinese_zodiac/rat/" target="_blank">water-rat</a>, <a title="Aihrus – ideas programmed real" href="http://aihr.us/">CTO</a>, <a title="Road biker, cyclist, biking; whatever you call, I love to ride" href="http://peimic.com/c/biking/">cyclist</a>, <a title="Michael's poetic like literary ramblings" href="http://peimic.com/t/poetry/">poet</a>, <a title="World Wide Opportunities on Organic Farms" href="http://peimic.com/t/WWOOF/">WWOOF'er</a> and <a title="My traveled to country list, is more than my age." href="http://peimic.com/c/travel/">world traveler</a>.</p>
 				<p>If you like this plugin, <a href="http://aihr.us/about-aihrus/donate/">please donate</a>.</p>
 			</div>
 EOD;
@@ -314,6 +314,14 @@ EOD;
 			'section' => 'typo3'
 		);
 		
+		$this->settings['typo3_url_skip'] = array(
+			'title'   => __( 'Skip URL check', 'typo3-importer'),
+			'desc'    => __( 'If the Website URL is valid, but the system says not, then check this', 'typo3-importer'),
+			'std'     => '',
+			'type'    => 'checkbox',
+			'section' => 'typo3'
+		);
+		
 		$this->settings['t3db_host'] = array(
 			'title'   => __( 'Database Host', 'typo3-importer'),
 			'std'     => '',
@@ -376,7 +384,7 @@ EOD;
 		
 		$this->settings['force_post_status'] = array(
 			'section' => 'general',
-			'title'   => __( 'Override Post Status as...?', 'typo3-importer'),
+			'title'   => __( 'Override Post Status as…?', 'typo3-importer'),
 			'desc'    => __( 'Hidden news records will remain as Draft.', 'typo3-importer'),
 			'type'    => 'radio',
 			'std'     => 'default',
@@ -526,7 +534,7 @@ EOD;
 		$this->settings['import_limit'] = array(
 			'section' => 'testing',
 			'title'   => __( 'Import Limit', 'typo3-importer'),
-			'desc'    => __( 'Number of news records allowed to import at a time. 0 for all..', 'typo3-importer'),
+			'desc'    => __( 'Number of news records allowed to import at a time. 0 for all.', 'typo3-importer'),
 			'std'     => '',
 			'type'    => 'text'
 		);
@@ -534,12 +542,12 @@ EOD;
 		$this->settings['debug_mode'] = array(
 			'section' => 'testing',
 			'title'   => __( 'Debug Mode' , 'typo3-importer'),
-			'desc'	  => __( 'Bypass Ajax controller to handle news_to_import directly for testing purposes', 'typo3-importer' ),
+			'desc'	  => __( 'Bypass Ajax controller to handle `news_to_import` directly for testing purposes', 'typo3-importer' ),
 			'type'    => 'checkbox',
 			'std'     => 0
 		);
 		
-		// Oops...
+		// Oops…
 		$this->settings['force_private_posts'] = array(
 			'section' => 'oops',
 			'title'   => __( 'Convert Imported Posts to Private, NOW!', 'typo3-importer'),
@@ -555,7 +563,7 @@ EOD;
 		// Reset/restore
 		$this->settings['delete'] = array(
 			'section' => 'reset',
-			'title'   => __( 'Delete...', 'typo3-importer'),
+			'title'   => __( 'Delete…', 'typo3-importer'),
 			'type'    => 'radio',
 			'std'     => '',
 			'choices' => array(
@@ -594,7 +602,14 @@ EOD;
 
 		$this->settings['news_to_import'] = array(
 			'title'   => __( 'News to Import' , 'typo3-importer'),
-			'desc'    => __( "A CSV list of news uids to import, like '1,2,3'. Overrides 'News Selection Criteria'." , 'typo3-importer'),
+			'desc'    => __( "A CSV list of news uids to import, like '1,2,3'. Overrides 'News WHERE Clause'." , 'typo3-importer'),
+			'type'	=> 'text',
+			'section' => 'selection'
+		);
+		
+		$this->settings['cats_to_import'] = array(
+			'title'   => __( 'Categories to Import' , 'typo3-importer'),
+			'desc'    => __( "A CSV list of news category uids to import, like '1,2,3'. Overrides 'News WHERE Clause'." , 'typo3-importer'),
 			'type'	=> 'text',
 			'section' => 'selection'
 		);
@@ -755,7 +770,7 @@ EOD;
 			$input['typo3_url']	= $typo3_url;
 
 			// check for typo3_url validity & reachability
-			if ( ! $this->_is_typo3_website( $typo3_url ) ) {
+			if ( ! $this->_is_typo3_website( $typo3_url ) && ! $input['typo3_url_skip']) {
 				add_settings_error( 't3i-options', 'typo3_url', __( "TYPO3 site not found at given Website URL", 'typo3-importer' ) );
 			}
 		}
@@ -783,7 +798,7 @@ EOD;
 			add_settings_error( 't3i-options', 't3db', __('Unable to connect to the database', 'typo3-importer') );
 		}
 
-		if ( $input['debug_mode'] && '' == $input['news_to_import'] ) {
+		if ( $input['debug_mode'] && empty( $input['news_to_import'] ) ) {
 			add_settings_error( 't3i-options', 'news_to_import', __( 'News to Import is required' , 'typo3-importer') );
 		}
 
@@ -800,6 +815,13 @@ EOD;
 			$news_to_import		= preg_replace( '#\s+#', '', $news_to_import);
 
 			$input['news_to_import']	= $news_to_import;
+		}
+		
+		if ( '' != $input['cats_to_import'] ) {
+			$cats_to_import		= $input['cats_to_import'];
+			$cats_to_import		= preg_replace( '#\s+#', '', $cats_to_import);
+
+			$input['cats_to_import']	= $cats_to_import;
 		}
 		
 		if ( '' != $input['news_to_skip'] ) {

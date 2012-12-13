@@ -23,6 +23,7 @@ Inline and related images will be added to the Media Library. The first image fo
 **TYPO3 Access**
 
 * Website URL
+* Skip URL check
 * Database Host
 * Database Name
 * Database Username
@@ -33,6 +34,7 @@ Inline and related images will be added to the Media Library. The first image fo
 * News WHERE Clause
 * News ORDER Clause
 * News to Import
+* Categories to Import
 * Skip Importing News
 
 **Import Options**
@@ -138,6 +140,11 @@ Yes. Any sponsoring would be greatly welcome. Please [donate](http://aihr.us/abo
 == Changelog ==
 = trunk =
 * TBD
+
+* Add Categories to Import
+* Call initialization methods when needed, than always
+* Skip URL check
+* Verbiage cleanup
 
 = 2.1.0 =
 * Aihrus branding 
