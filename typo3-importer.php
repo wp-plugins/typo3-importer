@@ -527,6 +527,21 @@ EOD;
 		if ( ! is_array( $news ) || $news['itemid'] != $this->news_uid )
 			die( json_encode( array( 'error' => sprintf( __( "Failed import: %s isn't a TYPO3 news record.", 'typo3-importer' ), esc_html( $_REQUEST['id'] ) ) ) ) );
 
+		if ( get_t3i_options( 'decode_entities' ) ) {
+			$conv_map			= array( 0x0, 0x10000, 0, 0xfffff );
+			foreach( $news as $key => $value ) {
+				if ( ! is_array( $value ) ) {
+					$news[ $key ]			= mb_decode_numericentity( $value, $conv_map, 'UTF-8' );
+				} else {
+					foreach( $value as $vKey => $vValue ) {
+						$value[ $vKey ]			= mb_decode_numericentity( $vValue, $conv_map, 'UTF-8' );
+					}
+
+					$news[ $key ]			= $value;
+				}
+			}
+		}
+
 		// TODO progress by post
 
 		// process and import news post
@@ -1113,6 +1128,8 @@ EOD;
 
 	// Clean up content
 	function _prepare_content( $content ) {
+		$content				= apply_filters( 't3i_prepare_content', $content );
+
 		// convert LINK tags to A
 		$content				= $this->_typo3_api_parse_typolinks($content);
 		// remove broken link spans
@@ -1572,5 +1589,19 @@ function TYPO3_Importer() {
 }
 
 add_action( 'init', 'TYPO3_Importer' );
+
+
+function fpjq_t3i_prepare_content( $content ) {
+	$content					= preg_replace( "#<li>\s*<h1>#i", '<li>', $content );
+	$content					= preg_replace( "#</h1>\s*</li>#i", '</li>', $content );
+	$content					= preg_replace( "#<h1[^>]+>#i", '<p>', $content );
+	$content					= preg_replace( "#</h1>#i", '</p>', $content );
+	$content					= preg_replace( "#ul style=\"text-align: left;\"#i", 'ul', $content );
+
+	return $content;
+}
+
+// TODO disable
+add_filter( 't3i_prepare_content', 'fpjq_t3i_prepare_content' );
 
 ?>

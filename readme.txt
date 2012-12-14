@@ -95,6 +95,7 @@ Inline and related images will be added to the Media Library. The first image fo
 	* H6
 * Related Links Wrap
 * Approve Non-spam Comments?
+* Decode Entities?
 
 **Testing Options**
 
@@ -114,6 +115,10 @@ Inline and related images will be added to the Media Library. The first image fo
 	* Imported comments
 	* Unattached media
 * Reset plugin
+
+= Filter Options =
+* `t3i_prepare_content` - Modify `tt_news.bodytext` before import
+	* Example: See `fpjq_t3i_prepare_content` at bottom of `typo3-import.php`
 
 == Installation ==
 1. Upload the `typo3-importer` folder to the `/wp-content/plugins/` directory
@@ -141,7 +146,9 @@ Yes. Any sponsoring would be greatly welcome. Please [donate](http://aihr.us/abo
 = trunk =
 * TBD
 
-* Add Categories to Import
+* Add Categories to Import - Thank you [FPJQ](http://fpjq.org/)
+* Add filter `t3i_prepare_content` - Thank you [FPJQ](http://fpjq.org/)
+* Decode Entities? - Thank you [FPJQ](http://fpjq.org/)
 * Call initialization methods when needed, than always
 * Skip URL check
 * Update POT

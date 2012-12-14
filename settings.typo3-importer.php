@@ -507,10 +507,19 @@ EOD;
 			'desc'   => __( 'Useful for adding membership oriented shortcodes around premium content. "|" separates before and after content. e.g. [member]|[/member]' , 'typo3-importer'),
 			'section' => 'general'
 		);
+
 		$this->settings['approve_comments'] = array(
 			'section' => 'general',
 			'title'   => __( 'Approve Non-spam Comments?', 'typo3-importer'),
 			'desc'    => __( 'Not fool proof, but beats mass approving comments after import.', 'typo3-importer'),
+			'type'    => 'checkbox',
+			'std'     => 1
+		);
+
+		$this->settings['decode_entities'] = array(
+			'section' => 'general',
+			'title'   => __( 'Decode Entities?', 'typo3-importer'),
+			'desc'    => __( 'Try to decode character entities into UTF-8.', 'typo3-importer'),
 			'type'    => 'checkbox',
 			'std'     => 1
 		);
