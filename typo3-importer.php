@@ -3,7 +3,7 @@
 	Plugin Name: TYPO3 Importer
 	Plugin URI: http://wordpress.org/extend/plugins/typo3-importer/
 	Description: Import tt_news and tx_comments from TYPO3 into WordPress.
-	Version: 2.2.0
+	Version: 2.2.1
 	Author: Michael Cannon
 	Author URI: http://aihr.us/about-aihrus/michael-cannons-resume/
 	License: GPLv2 or later
@@ -900,8 +900,10 @@ EOD;
 
 		foreach ( $files_arr as $key => $file ) {
 			$original_file_uri	= $uploads_dir_typo3 . 'media/' . $file;
-			$file_move			= wp_upload_bits($file, null, file_get_contents($original_file_uri));
+			$file_contents		= $this->file_get_contents_curl( $original_file_uri );
+			$file_move			= wp_upload_bits($file, null, $file_contents );
 			$filename			= $file_move['file'];
+			$this->log_imported_files( $original_file_uri, $filename );
 			$title				= sanitize_title_with_dashes($file);
 
 			$wp_filetype		= wp_check_filetype($file, null);
@@ -1005,8 +1007,10 @@ EOD;
 
 			$file				= basename( $src );
 			$original_file_uri	= $this->typo3_url . $src;
-			$file_move			= wp_upload_bits($file, null, file_get_contents($original_file_uri));
+			$file_contents		= $this->file_get_contents_curl( $original_file_uri );
+			$file_move			= wp_upload_bits( $file, null, $file_contents );
 			$filename			= $file_move['file'];
+			$this->log_imported_files( $original_file_uri, $filename );
 
 			$title				= $caption ? $caption : sanitize_title_with_dashes($file);
 
@@ -1040,6 +1044,39 @@ EOD;
 		wp_update_post( $post );
 	}
 
+
+	// file_get_contents support on some shared systems is turned off or goofy
+	function file_get_contents_curl( $url ) {
+		$ch						= curl_init();
+
+		curl_setopt( $ch, CURLOPT_AUTOREFERER, true );
+		curl_setopt( $ch, CURLOPT_ENCODING, '' );
+		curl_setopt( $ch, CURLOPT_FOLLOWLOCATION, true );
+		curl_setopt( $ch, CURLOPT_FRESH_CONNECT, true );
+		curl_setopt( $ch, CURLOPT_HEADER, false );
+		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
+		curl_setopt( $ch, CURLOPT_URL, $url );
+		curl_setopt( $ch, CURLOPT_USERAGENT, $_SERVER['HTTP_USER_AGENT'] );
+
+		$data					= curl_exec( $ch );
+		curl_close( $ch );
+
+		return $data;
+	}
+
+
+	function log_imported_files( $from, $to ) {
+		$log_imported_files		= get_t3i_options( 'log_imported_files' );
+		if ( empty( $log_imported_files ) )
+			return;
+
+		// log url requests for later gathering
+		$fp						= fopen( WP_CONTENT_DIR . '/typo3-importer-curl-log.txt', 'a' );
+		fwrite( $fp, $from . ' ' . $to . "\n" );
+		fclose( $fp );
+	}
+
+
 	function insert_postimages($post_id, $images, $captions) {
 		if ( $this->no_media_import )
 			return;
@@ -1054,13 +1091,16 @@ EOD;
 		$uploads_dir_typo3		= $this->typo3_url . 'uploads/';
 
 		// cycle through to create new post attachments
+		$attach_ids				= array();
 		foreach ( $images as $key => $file ) {
 			// cp image from A to B
 			// @ref http://codex.wordpress.org/Function_Reference/wp_upload_bits
 			// $upload = wp_upload_bits($_FILES["field1"]["name"], null, file_get_contents($_FILES["field1"]["tmp_name"]));
 			$original_file_uri	= $uploads_dir_typo3 . 'pics/' . $file;
-			$file_move			= wp_upload_bits($file, null, file_get_contents($original_file_uri));
+			$file_contents		= $this->file_get_contents_curl( $original_file_uri );
+			$file_move			= wp_upload_bits( $file, null, $file_contents );
 			$filename			= $file_move['file'];
+			$this->log_imported_files( $original_file_uri, $filename );
 
 			// @ref http://codex.wordpress.org/Function_Reference/wp_insert_attachment
 			$caption			= isset($captions[$key]) ? $captions[$key] : '';
@@ -1076,6 +1116,7 @@ EOD;
 				'post_title'		=> $title,
 			);
 			$attach_id			= wp_insert_attachment( $attachment, $filename, $post_id );
+			$attach_ids[]		= $attach_id;
 
 			if ( ! $this->featured_image_id ) {
 				$this->featured_image_id	= $attach_id;
@@ -1085,12 +1126,13 @@ EOD;
 			wp_update_attachment_metadata( $attach_id, $attach_data );
 		}
 
-
 		// insert [gallery] into content after the second paragraph
 		$post_content_array		= explode( $this->newline_wp, $post_content );
 		$post_content_arr_size	= sizeof( $post_content_array );
 		$new_post_content		= '';
-		$gallery_code			= '[gallery]';
+		$gallery_code			= '[gallery ids="';
+		$gallery_code			.= implode( ',', $attach_ids );
+		$gallery_code			.= '"]';
 		$gallery_inserted		= false;
 
 		// don't give single image galleries

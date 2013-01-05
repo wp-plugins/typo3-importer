@@ -1,14 +1,14 @@
-# Copyright (C) 2012 TYPO3 Importer
+# Copyright (C) 2013 TYPO3 Importer
 # This file is distributed under the same license as the TYPO3 Importer package.
 msgid ""
 msgstr ""
-"Project-Id-Version: TYPO3 Importer 2.1.0\n"
+"Project-Id-Version: TYPO3 Importer 2.2.0\n"
 "Report-Msgid-Bugs-To: http://wordpress.org/tag/typo3-importer\n"
-"POT-Creation-Date: 2012-12-13 11:47:10+00:00\n"
+"POT-Creation-Date: 2013-01-05 04:51:43+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"PO-Revision-Date: 2012-MO-DA HO:MI+ZONE\n"
+"PO-Revision-Date: 2013-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 
@@ -45,7 +45,7 @@ msgstr ""
 msgid "TYPO3 Importer Settings"
 msgstr ""
 
-#. #-#-#-#-#  typo3-importer.pot (TYPO3 Importer 2.1.0)  #-#-#-#-#
+#. #-#-#-#-#  typo3-importer.pot (TYPO3 Importer 2.2.0)  #-#-#-#-#
 #. Plugin Name of the plugin/theme
 #: settings.typo3-importer.php:51 settings.typo3-importer.php:58
 #: typo3-importer.php:102 typo3-importer.php:147
@@ -295,247 +295,255 @@ msgid ""
 "\" separates before and after content. e.g. [member]|[/member]"
 msgstr ""
 
-#: settings.typo3-importer.php:512
+#: settings.typo3-importer.php:513
 msgid "Approve Non-spam Comments?"
 msgstr ""
 
-#: settings.typo3-importer.php:513
+#: settings.typo3-importer.php:514
 msgid "Not fool proof, but beats mass approving comments after import."
 msgstr ""
 
 #: settings.typo3-importer.php:521
+msgid "Decode Entities?"
+msgstr ""
+
+#: settings.typo3-importer.php:522
+msgid "Try to decode character entities into UTF-8."
+msgstr ""
+
+#: settings.typo3-importer.php:530
 msgid "Don't Import Comments"
 msgstr ""
 
-#: settings.typo3-importer.php:528
+#: settings.typo3-importer.php:537
 msgid "Don't Import Media"
 msgstr ""
 
-#: settings.typo3-importer.php:529
+#: settings.typo3-importer.php:538
 msgid ""
 "Skips importing any related images and other media files of news records."
 msgstr ""
 
-#: settings.typo3-importer.php:536
+#: settings.typo3-importer.php:545
 msgid "Import Limit"
 msgstr ""
 
-#: settings.typo3-importer.php:537
+#: settings.typo3-importer.php:546
 msgid "Number of news records allowed to import at a time. 0 for all."
 msgstr ""
 
-#: settings.typo3-importer.php:544
+#: settings.typo3-importer.php:553
 msgid "Debug Mode"
 msgstr ""
 
-#: settings.typo3-importer.php:545
+#: settings.typo3-importer.php:554
 msgid ""
 "Bypass Ajax controller to handle `news_to_import` directly for testing "
 "purposes"
 msgstr ""
 
-#: settings.typo3-importer.php:553
+#: settings.typo3-importer.php:562
 msgid "Convert Imported Posts to Private, NOW!"
 msgstr ""
 
-#: settings.typo3-importer.php:554
+#: settings.typo3-importer.php:563
 msgid "A quick way to hide imported live posts."
 msgstr ""
 
-#: settings.typo3-importer.php:559
+#: settings.typo3-importer.php:568
 msgid ""
 "This will remove ALL posts imported with the 't3:tt_news.uid' meta key. "
 "Related post media and comments will also be deleted."
 msgstr ""
 
-#: settings.typo3-importer.php:560
+#: settings.typo3-importer.php:569
 msgid ""
 "This will remove ALL comments imported with the 't3:tx_comments' "
 "comment_agent key."
 msgstr ""
 
-#: settings.typo3-importer.php:561
+#: settings.typo3-importer.php:570
 msgid ""
 "This will remove ALL media without a related post. It's possible for non-"
 "imported media to be deleted."
 msgstr ""
 
-#: settings.typo3-importer.php:566
+#: settings.typo3-importer.php:575
 msgid "Delete…"
 msgstr ""
 
-#: settings.typo3-importer.php:570
+#: settings.typo3-importer.php:579
 msgid "Prior imports"
 msgstr ""
 
-#: settings.typo3-importer.php:571
+#: settings.typo3-importer.php:580
 msgid "Imported comments"
 msgstr ""
 
-#: settings.typo3-importer.php:572
+#: settings.typo3-importer.php:581
 msgid "Unattached media"
 msgstr ""
 
-#: settings.typo3-importer.php:578
+#: settings.typo3-importer.php:587
 msgid "Reset plugin"
 msgstr ""
 
-#: settings.typo3-importer.php:582
+#: settings.typo3-importer.php:591
 msgid ""
 "Check this box and click \"Save Changes\" below to reset plugin options to "
 "their defaults."
 msgstr ""
 
-#: settings.typo3-importer.php:588
+#: settings.typo3-importer.php:597
 msgid "News WHERE Clause"
 msgstr ""
 
-#: settings.typo3-importer.php:589
+#: settings.typo3-importer.php:598
 msgid ""
 "WHERE clause used to select news records from TYPO3. 'AND' must be the first "
 "part. e.g.: AND tt_news.deleted = 0 AND tt_news.pid > 0"
 msgstr ""
 
-#: settings.typo3-importer.php:596
+#: settings.typo3-importer.php:605
 msgid "News ORDER Clause"
 msgstr ""
 
-#: settings.typo3-importer.php:597
+#: settings.typo3-importer.php:606
 msgid ""
 "ORDER clause used to select news records from TYPO3. e.g.: ORDER BY tt_news."
 "uid ASC"
 msgstr ""
 
-#: settings.typo3-importer.php:604
+#: settings.typo3-importer.php:613
 msgid "News to Import"
 msgstr ""
 
-#: settings.typo3-importer.php:605
+#: settings.typo3-importer.php:614
 msgid ""
 "A CSV list of news uids to import, like '1,2,3'. Overrides 'News WHERE "
 "Clause'."
 msgstr ""
 
-#: settings.typo3-importer.php:611
+#: settings.typo3-importer.php:620
 msgid "Categories to Import"
 msgstr ""
 
-#: settings.typo3-importer.php:612
+#: settings.typo3-importer.php:621
 msgid ""
 "A CSV list of news category uids to import, like '1,2,3'. Overrides 'News "
 "WHERE Clause'."
 msgstr ""
 
-#: settings.typo3-importer.php:618
+#: settings.typo3-importer.php:627
 msgid "Skip Importing News"
 msgstr ""
 
-#: settings.typo3-importer.php:619
+#: settings.typo3-importer.php:628
 msgid "A CSV list of news uids not to import, like '1,2,3'."
 msgstr ""
 
-#: settings.typo3-importer.php:629
+#: settings.typo3-importer.php:638
 msgid "Make Nice Image Title?"
 msgstr ""
 
-#: settings.typo3-importer.php:630
+#: settings.typo3-importer.php:639
 msgid "Tries to make a nice title out of filenames if no title exists."
 msgstr ""
 
-#: settings.typo3-importer.php:640
+#: settings.typo3-importer.php:649
 msgid "Example Text Input"
 msgstr ""
 
-#: settings.typo3-importer.php:641
+#: settings.typo3-importer.php:650
 msgid "This is a description for the text input."
 msgstr ""
 
-#: settings.typo3-importer.php:648
+#: settings.typo3-importer.php:657
 msgid "Example Textarea Input"
 msgstr ""
 
-#: settings.typo3-importer.php:649
+#: settings.typo3-importer.php:658
 msgid "This is a description for the textarea input."
 msgstr ""
 
-#: settings.typo3-importer.php:657
+#: settings.typo3-importer.php:666
 msgid "Example Checkbox"
 msgstr ""
 
-#: settings.typo3-importer.php:658
+#: settings.typo3-importer.php:667
 msgid "This is a description for the checkbox."
 msgstr ""
 
-#: settings.typo3-importer.php:672
+#: settings.typo3-importer.php:681
 msgid "Example Radio"
 msgstr ""
 
-#: settings.typo3-importer.php:673
+#: settings.typo3-importer.php:682
 msgid "This is a description for the radio buttons."
 msgstr ""
 
-#: settings.typo3-importer.php:685
+#: settings.typo3-importer.php:694
 msgid "Example Select"
 msgstr ""
 
-#: settings.typo3-importer.php:686
+#: settings.typo3-importer.php:695
 msgid "This is a description for the drop-down."
 msgstr ""
 
-#: settings.typo3-importer.php:761
+#: settings.typo3-importer.php:770
 msgid "Website URL is required"
 msgstr ""
 
-#: settings.typo3-importer.php:774
+#: settings.typo3-importer.php:783
 msgid "TYPO3 site not found at given Website URL"
 msgstr ""
 
-#: settings.typo3-importer.php:780
+#: settings.typo3-importer.php:789
 msgid "Database Host is required"
 msgstr ""
 
-#: settings.typo3-importer.php:784
+#: settings.typo3-importer.php:793
 msgid "Database Name is required"
 msgstr ""
 
-#: settings.typo3-importer.php:788
+#: settings.typo3-importer.php:797
 msgid "Database Username is required"
 msgstr ""
 
-#: settings.typo3-importer.php:792
+#: settings.typo3-importer.php:801
 msgid "Database Password is required"
 msgstr ""
 
-#: settings.typo3-importer.php:798
+#: settings.typo3-importer.php:807
 msgid "Unable to connect to the database"
 msgstr ""
 
-#: settings.typo3-importer.php:802
+#: settings.typo3-importer.php:811
 msgid "News to Import is required"
 msgstr ""
 
-#: settings.typo3-importer.php:806
+#: settings.typo3-importer.php:815
 msgid "News WHERE Clause must begin with \"AND \""
 msgstr ""
 
-#: settings.typo3-importer.php:917
+#: settings.typo3-importer.php:926
 msgid "Successfully removed %s comments."
 msgstr ""
 
-#: settings.typo3-importer.php:945
+#: settings.typo3-importer.php:954
 msgid "Successfully updated %s TYPO3 news imports to 'Private'."
 msgstr ""
 
-#: settings.typo3-importer.php:947
+#: settings.typo3-importer.php:956
 msgid "No TYPO3 news imports found to mark as 'Private'."
 msgstr ""
 
-#: settings.typo3-importer.php:971
+#: settings.typo3-importer.php:980
 msgid ""
 "Successfully removed %s TYPO3 news and their related media and comments."
 msgstr ""
 
-#: settings.typo3-importer.php:987
+#: settings.typo3-importer.php:996
 msgid "Successfully removed %s no-post attachments."
 msgstr ""
 
@@ -699,13 +707,13 @@ msgstr ""
 msgid "Failed import: %s isn't a TYPO3 news record."
 msgstr ""
 
-#: typo3-importer.php:551
+#: typo3-importer.php:566
 msgid ""
 "&quot;<a href=\"%1$s\" target=\"_blank\">%2$s</a>&quot; Post ID %3$s was "
 "successfully processed in %4$s seconds."
 msgstr ""
 
-#: typo3-importer.php:1497
+#: typo3-importer.php:1514
 msgid ""
 "&quot;%1$s&quot; Post ID %2$s failed to be processed. The error message was: "
 "%3$s"

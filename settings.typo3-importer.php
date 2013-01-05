@@ -524,6 +524,14 @@ EOD;
 			'std'     => 1
 		);
 		
+		$this->settings['log_imported_files'] = array(
+			'section' => 'general',
+			'title'   => __( 'Log Imported Files?' , 'typo3-importer'),
+			'desc'    => sprintf( __( 'Log found at `%s`. First entry is from, second is to.', 'typo3-importer'), WP_CONTENT_URL . '/typo3-importer-curl-log.txt' ),
+			'type'    => 'checkbox',
+			'std'     => 0
+		);
+		
 		// Testing
 		$this->settings['no_comments_import'] = array(
 			'section' => 'testing',
@@ -807,7 +815,7 @@ EOD;
 			add_settings_error( 't3i-options', 't3db', __('Unable to connect to the database', 'typo3-importer') );
 		}
 
-		if ( $input['debug_mode'] && empty( $input['news_to_import'] ) ) {
+		if ( ! empty( $input['debug_mode'] ) && empty( $input['news_to_import'] ) ) {
 			add_settings_error( 't3i-options', 'news_to_import', __( 'News to Import is required' , 'typo3-importer') );
 		}
 
@@ -866,7 +874,7 @@ EOD;
 			return $input;
 		}
 
-		if ( $input['reset_plugin'] ) {
+		if ( ! empty( $input['reset_plugin'] ) ) {
 			foreach ( $this->reset as $id => $std ) {
 				$input[$id]	= $std;
 			}

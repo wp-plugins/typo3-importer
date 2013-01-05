@@ -4,7 +4,7 @@ Donate link: http://aihr.us/about-aihrus/donate/
 Tags: typo3, import
 Requires at least: 3.0.0
 Tested up to: 3.5
-Stable tag: 2.2.0
+Stable tag: 2.2.1
 
 Easily import thousands of tt_news and tx_comments from TYPO3 into WordPress.
 
@@ -96,6 +96,7 @@ Inline and related images will be added to the Media Library. The first image fo
 * Related Links Wrap
 * Approve Non-spam Comments?
 * Decode Entities?
+* Log Imported Files?
 
 **Testing Options**
 
@@ -144,7 +145,12 @@ Yes. Any sponsoring would be greatly welcome. Please [donate](http://aihr.us/abo
 
 == Changelog ==
 = trunk =
+
+= 2.2.1 =
 * Copyright year update
+* Include media ids in gallery code
+* Log imported files option
+* Use curl than file_get_contents
 
 = 2.2.0 =
 * Add Categories to Import - Thank you [FPJQ](http://fpjq.org/)
