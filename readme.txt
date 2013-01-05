@@ -144,7 +144,7 @@ Yes. Any sponsoring would be greatly welcome. Please [donate](http://aihr.us/abo
 
 == Changelog ==
 = trunk =
-* TBD
+* Copyright year update
 
 = 2.2.0 =
 * Add Categories to Import - Thank you [FPJQ](http://fpjq.org/)
