@@ -321,7 +321,7 @@ EOD;
 
 	function show_errors() {
 		echo '<h3>';
-		_e( 'Errors found, see below' , 'typo3-importer');
+		_e( 'Errors found, see below', 'typo3-importer' );
 		echo '</h3>';
 		echo '<ul class="error">';
 		foreach ( $this->errors as $key => $error ) {

@@ -450,7 +450,7 @@ EOD;
 		);
 
 		$this->settings['related_files_header'] = array(
-			'title'   => __( 'Related Files Header' , 'typo3-importer'),
+			'title'   => __( 'Related Files Header', 'typo3-importer' ),
 			'std'     => __( 'Related Files', 'typo3-importer' ),
 			'type'	=> 'text',
 			'section' => 'general'
@@ -473,14 +473,14 @@ EOD;
 		);
 		
 		$this->settings['related_files_wrap'] = array(
-			'title'   => __( 'Related Files Wrap' , 'typo3-importer'),
-			'desc'   => __( 'Useful for adding membership oriented shortcodes around premium content. "|" separates before and after content. e.g. [paid]|[/paid]' , 'typo3-importer'),
+			'title'   => __( 'Related Files Wrap', 'typo3-importer' ),
+			'desc'   => __( 'Useful for adding membership oriented shortcodes around premium content. "|" separates before and after content. e.g. [paid]|[/paid]', 'typo3-importer' ),
 			'type'	=> 'text',
 			'section' => 'general'
 		);
 
 		$this->settings['related_links_header'] = array(
-			'title'   => __( 'Related Links Header' , 'typo3-importer'),
+			'title'   => __( 'Related Links Header', 'typo3-importer' ),
 			'std'     => __( 'Related Links', 'typo3-importer' ),
 			'type'	=> 'text',
 			'section' => 'general'
@@ -503,8 +503,8 @@ EOD;
 		);
 		
 		$this->settings['related_links_wrap'] = array(
-			'title'   => __( 'Related Links Wrap' , 'typo3-importer'),
-			'desc'   => __( 'Useful for adding membership oriented shortcodes around premium content. "|" separates before and after content. e.g. [member]|[/member]' , 'typo3-importer'),
+			'title'   => __( 'Related Links Wrap', 'typo3-importer' ),
+			'desc'   => __( 'Useful for adding membership oriented shortcodes around premium content. "|" separates before and after content. e.g. [member]|[/member]', 'typo3-importer' ),
 			'section' => 'general'
 		);
 
@@ -526,7 +526,7 @@ EOD;
 		
 		$this->settings['log_imported_files'] = array(
 			'section' => 'general',
-			'title'   => __( 'Log Imported Files?' , 'typo3-importer'),
+			'title'   => __( 'Log Imported Files?', 'typo3-importer' ),
 			'desc'    => sprintf( __( 'Log found at `%s`. First entry is from, second is to.', 'typo3-importer'), WP_CONTENT_URL . '/typo3-importer-curl-log.txt' ),
 			'type'    => 'checkbox',
 			'std'     => 0
@@ -535,14 +535,14 @@ EOD;
 		// Testing
 		$this->settings['no_comments_import'] = array(
 			'section' => 'testing',
-			'title'   => __( "Don't Import Comments" , 'typo3-importer'),
+			'title'   => __( "Don't Import Comments", 'typo3-importer' ),
 			'type'    => 'checkbox',
 			'std'     => 0
 		);
 		
 		$this->settings['no_media_import'] = array(
 			'section' => 'testing',
-			'title'   => __( "Don't Import Media" , 'typo3-importer'),
+			'title'   => __( "Don't Import Media", 'typo3-importer' ),
 			'desc'    => __( 'Skips importing any related images and other media files of news records.', 'typo3-importer'),
 			'type'    => 'checkbox',
 			'std'     => 0
@@ -558,7 +558,7 @@ EOD;
 		
 		$this->settings['debug_mode'] = array(
 			'section' => 'testing',
-			'title'   => __( 'Debug Mode' , 'typo3-importer'),
+			'title'   => __( 'Debug Mode', 'typo3-importer' ),
 			'desc'	  => __( 'Bypass Ajax controller to handle `news_to_import` directly for testing purposes', 'typo3-importer' ),
 			'type'    => 'checkbox',
 			'std'     => 0
@@ -574,7 +574,7 @@ EOD;
 		);
 		
 		$desc_imports		= __( "This will remove ALL posts imported with the 't3:tt_news.uid' meta key. Related post media and comments will also be deleted.", 'typo3-importer');
-		$desc_comments		= __( "This will remove ALL comments imported with the 't3:tx_comments' comment_agent key." , 'typo3-importer');
+		$desc_comments		= __( "This will remove ALL comments imported with the 't3:tx_comments' comment_agent key.", 'typo3-importer' );
 		$desc_attachments	= __( "This will remove ALL media without a related post. It's possible for non-imported media to be deleted.", 'typo3-importer');
 
 		// Reset/restore
@@ -602,38 +602,38 @@ EOD;
 
 		// selection
 		$this->settings['news_custom_where'] = array(
-			'title'   => __( 'News WHERE Clause' , 'typo3-importer'),
-			'desc'    => __( "WHERE clause used to select news records from TYPO3. 'AND' must be the first part. e.g.: AND tt_news.deleted = 0 AND tt_news.pid > 0" , 'typo3-importer'),
+			'title'   => __( 'News WHERE Clause', 'typo3-importer' ),
+			'desc'    => __( "WHERE clause used to select news records from TYPO3. 'AND' must be the first part. e.g.: AND tt_news.deleted = 0 AND tt_news.pid > 0", 'typo3-importer' ),
 			'std'     => 'AND tt_news.deleted = 0 AND tt_news.pid > 0',
 			'type'	=> 'text',
 			'section' => 'selection'
 		);
 		
 		$this->settings['news_custom_order'] = array(
-			'title'   => __( 'News ORDER Clause' , 'typo3-importer'),
-			'desc'    => __( "ORDER clause used to select news records from TYPO3. e.g.: ORDER BY tt_news.uid ASC" , 'typo3-importer'),
+			'title'   => __( 'News ORDER Clause', 'typo3-importer' ),
+			'desc'    => __( "ORDER clause used to select news records from TYPO3. e.g.: ORDER BY tt_news.uid ASC", 'typo3-importer' ),
 			'std'     => 'ORDER BY tt_news.uid ASC',
 			'type'	=> 'text',
 			'section' => 'selection'
 		);
 
 		$this->settings['news_to_import'] = array(
-			'title'   => __( 'News to Import' , 'typo3-importer'),
-			'desc'    => __( "A CSV list of news uids to import, like '1,2,3'. Overrides 'News WHERE Clause'." , 'typo3-importer'),
+			'title'   => __( 'News to Import', 'typo3-importer' ),
+			'desc'    => __( "A CSV list of news uids to import, like '1,2,3'. Overrides 'News WHERE Clause'.", 'typo3-importer' ),
 			'type'	=> 'text',
 			'section' => 'selection'
 		);
 		
 		$this->settings['cats_to_import'] = array(
-			'title'   => __( 'Categories to Import' , 'typo3-importer'),
-			'desc'    => __( "A CSV list of news category uids to import, like '1,2,3'. Overrides 'News WHERE Clause'." , 'typo3-importer'),
+			'title'   => __( 'Categories to Import', 'typo3-importer' ),
+			'desc'    => __( "A CSV list of news category uids to import, like '1,2,3'. Overrides 'News WHERE Clause'.", 'typo3-importer' ),
 			'type'	=> 'text',
 			'section' => 'selection'
 		);
 		
 		$this->settings['news_to_skip'] = array(
-			'title'   => __( 'Skip Importing News' , 'typo3-importer'),
-			'desc'    => __( "A CSV list of news uids not to import, like '1,2,3'." , 'typo3-importer'),
+			'title'   => __( 'Skip Importing News', 'typo3-importer' ),
+			'desc'    => __( "A CSV list of news uids not to import, like '1,2,3'.", 'typo3-importer' ),
 			'type'	=> 'text',
 			'section' => 'selection'
 		);
@@ -643,8 +643,8 @@ EOD;
 		if ( false ) {
 		$this->settings['make_nice_image_title'] = array(
 			'section' => 'TBI',
-			'title'   => __( 'Make Nice Image Title?' , 'typo3-importer'),
-			'desc'    => __( 'Tries to make a nice title out of filenames if no title exists.' , 'typo3-importer'),
+			'title'   => __( 'Make Nice Image Title?', 'typo3-importer' ),
+			'desc'    => __( 'Tries to make a nice title out of filenames if no title exists.', 'typo3-importer' ),
 			'type'    => 'checkbox',
 			'std'     => 1
 		);
@@ -816,11 +816,11 @@ EOD;
 		}
 
 		if ( ! empty( $input['debug_mode'] ) && empty( $input['news_to_import'] ) ) {
-			add_settings_error( 't3i-options', 'news_to_import', __( 'News to Import is required' , 'typo3-importer') );
+			add_settings_error( 't3i-options', 'news_to_import', __( 'News to Import is required', 'typo3-importer' ) );
 		}
 
 		if ( 'AND ' != substr( $input['news_custom_where'], 0, 4 ) ) {
-			add_settings_error( 't3i-options', 'news_custom_where', __( 'News WHERE Clause must begin with "AND "' , 'typo3-importer') );
+			add_settings_error( 't3i-options', 'news_custom_where', __( 'News WHERE Clause must begin with "AND "', 'typo3-importer' ) );
 		}
 
 		if ( '' != $input['import_limit'] ) {
@@ -931,7 +931,7 @@ EOD;
 			$comment_count++;
 		}
 
-		add_settings_error( 't3i-options', 'comments', sprintf( __( "Successfully removed %s comments." , 'typo3-importer'), number_format( $comment_count ) ), 'updated' );
+		add_settings_error( 't3i-options', 'comments', sprintf( __( "Successfully removed %s comments.", 'typo3-importer' ), number_format( $comment_count ) ), 'updated' );
 	}
 
 	function force_private_posts() {
@@ -959,9 +959,9 @@ EOD;
 		}
 
 		if ( $post_count )
-			add_settings_error( 't3i-options', 'force_private_posts', sprintf( __( "Successfully updated %s TYPO3 news imports to 'Private'." , 'typo3-importer'), number_format( $post_count ) ), 'updated' );
+			add_settings_error( 't3i-options', 'force_private_posts', sprintf( __( "Successfully updated %s TYPO3 news imports to 'Private'.", 'typo3-importer' ), number_format( $post_count ) ), 'updated' );
 		else
-			add_settings_error( 't3i-options', 'force_private_posts', __( "No TYPO3 news imports found to mark as 'Private'." , 'typo3-importer'), 'updated' );
+			add_settings_error( 't3i-options', 'force_private_posts', __( "No TYPO3 news imports found to mark as 'Private'.", 'typo3-importer' ), 'updated' );
 	}
 
 	function delete_import() {
@@ -985,7 +985,7 @@ EOD;
 			$post_count++;
 		}
 
-		add_settings_error( 't3i-options', 'imports', sprintf( __( "Successfully removed %s TYPO3 news and their related media and comments." , 'typo3-importer'), number_format( $post_count ) ), 'updated' );
+		add_settings_error( 't3i-options', 'imports', sprintf( __( "Successfully removed %s TYPO3 news and their related media and comments.", 'typo3-importer' ), number_format( $post_count ) ), 'updated' );
 	}
 
 	function delete_attachments( $post_id = false, $report = true ) {
@@ -1001,7 +1001,7 @@ EOD;
 		}
 
 		if ( $report )
-			add_settings_error( 't3i-options', 'attachments', sprintf( __( "Successfully removed %s no-post attachments." , 'typo3-importer'), number_format( $attachment_count ) ), 'updated' );
+			add_settings_error( 't3i-options', 'attachments', sprintf( __( "Successfully removed %s no-post attachments.", 'typo3-importer' ), number_format( $attachment_count ) ), 'updated' );
 	}
 	
 }

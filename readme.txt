@@ -145,6 +145,7 @@ Yes. Any sponsoring would be greatly welcome. Please [donate](http://aihr.us/abo
 
 == Changelog ==
 = trunk =
+* Update POT
 
 = 2.2.2 =
 * Author URL update
