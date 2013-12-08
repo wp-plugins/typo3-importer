@@ -1,15 +1,19 @@
-=== TYPO3 Importer ===
+=== TYPO3 Importer by Aihrus ===
+
 Contributors: comprock
 Donate link: http://aihr.us/about-aihrus/donate/
 Tags: typo3, import
-Requires at least: 3.0.0
+Requires at least: 3.5
 Tested up to: 3.5
 Stable tag: 2.2.2
+License: GPLv2 or later
+License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-Easily import thousands of tt_news and tx_comments from TYPO3 into WordPress.
+TYPO3 Importer by Aihrus easily imports thousands of tt_news and tx_comments from TYPO3 into WordPress.
 
 == Description ==
-TYPO3 Importer brings your TYPO3 news, related media and comments into WordPress with minimal fuss. You can be as selective or open as you'd like for selecting which tt_news records to grab. Import can be interrupted and restarted later on.
+
+TYPO3 Importer [by Aihrus](http://aihr.us/about-aihrus/) brings your TYPO3 news, related media and comments into WordPress with minimal fuss. You can be as selective or open as you'd like for selecting which tt_news records to grab. Import can be interrupted and restarted later on.
 
 Inline and related images will be added to the Media Library. The first image found is optionally set as the Featured Image for the post. Inline images will have their source URLs updated. If there's more than one related image, the [gallery] shortcode is optionally inserted into the post.
 
@@ -19,7 +23,13 @@ Inline and related images will be added to the Media Library. The first image fo
 * Post status override is possible, but hidden posts, will be set as Drafts.
 * Opps and Restore options provide quick clean up and hiding of imports.
 
+= Filter Options =
+
+* `t3i_prepare_content` - Modify `tt_news.bodytext` before import
+	* Example: See `fpjq_t3i_prepare_content` at bottom of `typo3-import.php`
+
 = TYPO3 Importer Options =
+
 **TYPO3 Access**
 
 * Website URL
@@ -117,150 +127,80 @@ Inline and related images will be added to the Media Library. The first image fo
 	* Unattached media
 * Reset plugin
 
-= Filter Options =
-* `t3i_prepare_content` - Modify `tt_news.bodytext` before import
-	* Example: See `fpjq_t3i_prepare_content` at bottom of `typo3-import.php`
 
 == Installation ==
-1. Upload the `typo3-importer` folder to the `/wp-content/plugins/` directory
-1. Activate the plugin through the 'Plugins' menu in WordPress
-1. Set TYPO3 access via Settings > TYPO3 Importer
-1. Import via Tools > TYPO3 Importer
+
+= Install Methods =
+
+* Through WordPress Admin > Plugins > Add New, Search for "TYPO3 Importer"
+	* Find "TYPO3 Importer by Aihrus"
+	* Click "Install Now" of "TYPO3 Importer by Aihrus"
+* Download [`typo3-importer.zip`](http://downloads.wordpress.org/plugin/typo3-importer.zip) locally
+	* Through WordPress Admin > Plugins > Add New
+	* Click Upload
+	* "Choose File" `typo3-importer.zip`
+	* Click "Install Now"
+* Download and unzip [`typo3-importer.zip`](http://downloads.wordpress.org/plugin/typo3-importer.zip) locally
+	* Using FTP, upload directory `typo3-importer` to your website's `/wp-content/plugins/` directory
+
+= Activatation Options =
+
+* Activate the "TYPO3 Importer" plugin after uploading
+* Activate the "TYPO3 Importer" plugin through WordPress Admin > Plugins
+
+= Usage =
+
+1. Set TYPO3 access through WordPress Admin > Settings > TYPO3 Importer
+1. Import via WordPress Admin > Tools > TYPO3 Importer
+
+= Upgrading =
+
+* Through WordPress
+	* Via WordPress Admin > Dashboard > Updates, click "Check Again"
+	* Select plugins for update, click "Update Plugins"
+* Using FTP
+	* Download and unzip [`typo3-importer.zip`](http://downloads.wordpress.org/plugin/typo3-importer.zip) locally
+	* FTP, upload directory `typo3-importer` to your website's `/wp-content/plugins/` directory
+	* Be sure to overwrite your existing `typo3-importer` folder contents
+
 
 == Frequently Asked Questions ==
-= How do you identify the right URL? =
 
-If TYPO3 is reached at http://example.com/typo3, then the correct website URL is http://example.com.
+= Most Common Issues =
 
-= Why is my website URL correct, but plugin says not? =
-Do you have at least PHP 5.3.3 or PHP 5.2.14 installed?
+* Got `Parse error: syntax error, unexpected T_STATIC, expecting ')'`? Read [Most Aihrus Plugins Require PHP 5.3+](https://aihrus.zendesk.com/entries/30678006) for the fixes.
+* [Debug common theme and plugin conflicts](https://aihrus.zendesk.com/entries/25119302)
 
-= Can I sponsor importing TYPO3 ______? =
-Yes. Any sponsoring would be greatly welcome. Please [donate](http://aihr.us/about-aihrus/donate/ "Help sponsor TYPO3 Importer") and let me know what's wanted
+= Still Stuck or Want Something Done? Get Support! =
+
+1. [TYPO3 Importer Knowledge Base](https://aihrus.zendesk.com/categories/20134788) - read and comment upon frequently asked questions
+1. [Open TYPO3 Importer Issues](https://github.com/michael-cannon/typo3-importer/issues) - review and submit bug reports and enhancement requests
+1. [TYPO3 Importer Support on WordPress](http://wordpress.org/support/plugin/typo3-importer) - ask questions and review responses
+1. [Contribute Code to TYPO3 Importer](https://github.com/michael-cannon/typo3-importer/blob/master/CONTRIBUTING.md)
+1. [Beta Testers Needed](http://aihr.us/become-beta-tester/) - get the latest TYPO3 Importer version
+
 
 == Screenshots ==
+
 1. Where to find TYPO3 Importer in Tools
 2. TYPO3 Importer settings
 3. TYPO3 news entries being imported
 
+[gallery]
+
+
 == Changelog ==
-= trunk =
-* Update POT
 
-= 2.2.2 =
-* Author URL update
-* Update POT
+See [CHANGELOG](https://github.com/michael-cannon/typo3-importer/blob/master/CHANGELOG.md)
 
-= 2.2.1 =
-* Copyright year update
-* Include media ids in gallery code
-* Log imported files option
-* Use curl than file_get_contents
-
-= 2.2.0 =
-* Add Categories to Import - Thank you [FPJQ](http://fpjq.org/)
-* Add filter `t3i_prepare_content` - Thank you [FPJQ](http://fpjq.org/)
-* Decode Entities? - Thank you [FPJQ](http://fpjq.org/)
-* Call initialization methods when needed, than always
-* Skip URL check
-* Update POT
-* Verbiage cleanup
-
-= 2.1.0 =
-* Aihrus branding 
-
-= 2.0.6 =
-* Disable admin_init
-
-= 2.0.5 =
-* Use admin_init
-
-= 2.0.4 =
-* Added error messaging for incorrect News WHERE Clause
-* Added database connection validation
-* Update contact/donate information
-
-= 2.0.3 =
-* Add User-Agent for TYPO3 website check
-* screen-meta-links endif fix
-* Make okay for WordPress 3.3
-* Insert and Update posts
-
-= 2.0.2 =
-* Fix Settings reset
-* Update languages
-
-= 2.0.1 =
-* Installation directions update
-* Revise readme description
-* Update TODOs
-* Import meta keywords and descriptions for All in One SEO, Bizz themes, Headspace2, Thesis and Yoast's WordPress SEO
-* Update Options > Settings verbiage
-* Update TYPO3 Importer verbiage
-* Set default author
-* Enable debug mode to handle news_to_import directly for testing purposes 
-* Ignore file:// sources, they're none existant except on original computer
-* Apply display none to images with file:// based source
-* Update text domain and language files
-
-= 2.0.0 =
-* Remove TYPO3 tx_comments approved requirement
-* Add askimet_spam_checker to comment importing
-* Position gallery shortcode in post content
-* Position more links in post content
-* Disallow single image galleries
-* Migrate importing to one-at-a-time model
-* Separate import and option screens
-* Configure related files and links header text, tag and wrapper
-* Enable custom news WHERE & ORDER clause
-* Enable specific news uid import/skip
-* Require TYPO3 access fields
-* Check that TYPO3 site exists on Website URL
-* Import related comments during each news import
-* Remove comment threading since TYPO3 didn't support it
-* Update screenshots
-* Create users with emails based upon author name and domain if no email given
-* Don't create users for authors with no email or name
-* Create top right meta links between options and import screens
-* Make best attempts to not duplicate authors as users
-* Set keywords and descriptions for All in One SEO Pack
-
-= 1.0.2 =
-* Update description
-
-= 1.0.1 =
-* Update Changelog
-
-= 1.0.0 =
-* Update TYPO3 Importer settings screenshot
-* update CHANGELOG
-* Add force_private_posts(), Great for when you accidentially push imports live, but didn't mean to;
-* Remove excess options labels
-* fix options saving
-* Force post status save as option; Select draft, publish and future statuses from news import; Set input defaults;
-* Clarify plugin description; Add datetime to custom data; remove user_nicename as it prevents authors URLs from working;
-* remove testing case
-* prevent conflicting usernames
-* update Peimic.com plugin URL
-
-= 0.1.1 =
-* set featured image from content source or related images
-* seperate news/comment batch limits
-* CamelCase to under_score
-* rename batch limit var
-* lower batch limit further, serious hang 10 when doing live imports
-* lower batch limit due to seeming to hang
-* correct plugin url
-* revise recognition
-* Validate readme.txt
-* Inital import of "languages" directory
-* add license; enable l18n
-
-= 0.1.0 =
-* Initial release
 
 == Upgrade Notice ==
-* None
 
-== TODOs ==
-* Convert related links like Getting the Most Out of Your LMS: http://www.2elearning.com/markets/executive-suite/top-stories/top-stories-item/article/getting-the-most-from-your-lms.html to <a href=http://www.2elearning.com/markets/executive-suite/top-stories/top-stories-item/article/getting-the-most-from-your-lms.html">Getting the Most Out of Your LMS</a>
+= 0.1.0 =
+
+* Initial release
+
+
+== Notes ==
+
+TBD
