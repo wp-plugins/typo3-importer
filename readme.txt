@@ -1,6 +1,6 @@
 === TYPO3 Importer by Aihrus ===
 
-Contributors: comprock
+Contributors: comprock, saurabhd
 Donate link: http://aihr.us/about-aihrus/donate/
 Tags: typo3, import
 Requires at least: 3.5
