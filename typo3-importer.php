@@ -1,14 +1,18 @@
 <?php
-/*
-	Plugin Name: TYPO3 Importer
-	Plugin URI: http://wordpress.org/extend/plugins/typo3-importer/
-	Description: Import tt_news and tx_comments from TYPO3 into WordPress.
-	Version: 2.2.2
-	Author: Michael Cannon
-	Author URI: http://aihr.us/about-aihrus/michael-cannon-resume/
-	License: GPLv2 or later
+/**
+ * Plugin Name: TYPO3 tt_news Importer
+ * Plugin URI: http://wordpress.org/extend/plugins/typo3-importer/
+ * Description: TYPO3 tt_news Importer easily imports thousands of tt_news and tx_comments from TYPO3 into WordPress.
+ * Version: 2.3.0
+ * Author: Axelerant
+ * Author URI: http://axelerant.com/
+ * License: GPLv2 or later
+ * Text Domain: typo3-importer
+ * Domain Path: /languages
+ */
 
-	Copyright 2013  Michael Cannon  (email : mc@aihr.us)
+/**
+	Copyright 2015 Axelerant  (email: info@axelerant.com)
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License, version 2, as 
@@ -35,7 +39,7 @@ require_once( 'screen-meta-links.php' );
 
 
 /**
- * TYPO3 Importer
+ * TYPO3 tt_news Importer
  *
  * @package typo3-importer
  */
@@ -53,6 +57,8 @@ class TYPO3_Importer {
 	var $t3db_username			= null;
 	var $typo3_url				= null;
 	var $wpdb					= null;
+
+	static $version = '2.3.0';
 
 	// Plugin initialization
 	function TYPO3_Importer() {
@@ -99,12 +105,12 @@ class TYPO3_Importer {
 
 	// Register the management page
 	function add_admin_menu() {
-		$this->menu_id = add_management_page( __( 'TYPO3 Importer', 'typo3-importer' ), __( 'TYPO3 Importer', 'typo3-importer' ), 'manage_options', 'typo3-importer', array(&$this, 'user_interface') );
+		$this->menu_id = add_management_page( __( 'TYPO3 tt_news Importer', 'typo3-importer' ), __( 'TYPO3 tt_news Importer', 'typo3-importer' ), 'manage_options', 'typo3-importer', array(&$this, 'user_interface') );
 
 		add_action( 'admin_print_styles-' . $this->menu_id, array( &$this, 'styles' ) );
         add_screen_meta_link(
         	't3i-options-link',
-			__('TYPO3 Importer Settings', 'typo3-importer'),
+			__('TYPO3 tt_news Importer Settings', 'typo3-importer'),
 			admin_url('options-general.php?page=t3i-options'),
 			$this->menu_id,
 			array('style' => 'font-weight: bold;')
@@ -144,7 +150,7 @@ class TYPO3_Importer {
 	<div class="icon32" id="icon-tools"></div>
 	<h2>
 EOD;
-	_e('TYPO3 Importer', 'typo3-importer');
+	_e('TYPO3 tt_news Importer', 'typo3-importer');
 	echo '</h2>';
 
 		if ( get_t3i_options( 'debug_mode' ) ) {
@@ -505,7 +511,7 @@ EOD;
 
 	</form>
 <?php
-		$copyright				= '<div class="copyright">Copyright %s <a href="http://aihr.us">Aihr.us.</a></div>';
+		$copyright				= '<div class="copyright">Copyright %s <a href="http://axelerant.com/">http://axelerant.com.</a></div>';
 		$copyright				= sprintf( $copyright, date( 'Y' ) );
 		echo $copyright;
 	}
@@ -1567,7 +1573,7 @@ EOD;
 	 * Returns string of a filename or string converted to a spaced extension
 	 * less header type string.
 	 *
-	 * @author Michael Cannon <mc@aihr.us>
+	 * @author Axelerant <http://axelerant.com/>
 	 * @param string filename or arbitrary text
 	 * @return mixed string/boolean
 	 */

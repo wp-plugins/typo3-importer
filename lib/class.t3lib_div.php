@@ -5367,7 +5367,7 @@ final class t3lib_div {
 	 */
 	public static function requireFile($requireFile) {
 		global $T3_SERVICES, $T3_VAR, $TYPO3_CONF_VARS;
-		require $requireFile;
+		require_once $requireFile;
 	}
 
 	/**
