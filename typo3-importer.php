@@ -3,16 +3,16 @@
  * Plugin Name: TYPO3 tt_news Importer
  * Plugin URI: http://wordpress.org/extend/plugins/typo3-importer/
  * Description: TYPO3 tt_news Importer easily imports thousands of tt_news and tx_comments from TYPO3 into WordPress.
- * Version: 2.3.0
+ * Version: 2.3.1
  * Author: Axelerant
- * Author URI: http://axelerant.com/
+ * Author URI: https://axelerant.com/
  * License: GPLv2 or later
  * Text Domain: typo3-importer
  * Domain Path: /languages
  */
 
 /**
-	Copyright 2015 Axelerant  (email: info@axelerant.com)
+	Copyright 2015 Axelerant
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License, version 2, as 
@@ -58,7 +58,7 @@ class TYPO3_Importer {
 	var $typo3_url				= null;
 	var $wpdb					= null;
 
-	static $version = '2.3.0';
+	static $version = '2.3.1';
 
 	// Plugin initialization
 	function TYPO3_Importer() {
@@ -511,7 +511,7 @@ EOD;
 
 	</form>
 <?php
-		$copyright				= '<div class="copyright">Copyright %s <a href="http://axelerant.com/">http://axelerant.com.</a></div>';
+		$copyright				= '<div class="copyright">Copyright %s <a href="https://axelerant.com/">https://axelerant.com.</a></div>';
 		$copyright				= sprintf( $copyright, date( 'Y' ) );
 		echo $copyright;
 	}
@@ -1573,7 +1573,7 @@ EOD;
 	 * Returns string of a filename or string converted to a spaced extension
 	 * less header type string.
 	 *
-	 * @author Axelerant <http://axelerant.com/>
+	 * @author Axelerant <https://axelerant.com/>
 	 * @param string filename or arbitrary text
 	 * @return mixed string/boolean
 	 */

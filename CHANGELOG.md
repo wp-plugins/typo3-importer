@@ -1,5 +1,8 @@
 # CHANGELOG - TYPO3 tt_news Importer
 
+## 2.3.1
+* Update store branding
+
 ## 2.3.0
 * Add tests
 * Change copyright text
