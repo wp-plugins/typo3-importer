@@ -129,7 +129,7 @@ class T3I_Settings {
 		
 	</form>';
 
-		$copyright				= '<div class="copyright">Copyright %s <a href="http://axelerant.com/">http://axelerant.com.</a></div>';
+		$copyright				= '<div class="copyright">Copyright %s <a href="https://axelerant.com/">https://axelerant.com.</a></div>';
 		$copyright				= sprintf( $copyright, date( 'Y' ) );
 		echo					<<<EOD
 				$copyright
@@ -202,18 +202,19 @@ EOD;
 	/**
 	 * Description for About section
 	 */
-	public function display_about_section() {
-		$text  = __( '<img class="size-medium" src="%5$s" alt="Axelerant 2015 Retreat in Goa" width="640" height="327" /><p>We at Axelerant have transformed ourselves from being a simple Drupal development company into a thriving incubator for products and services related to DevOps, Drupal, ecommerce, project development, release management, WordPress, and 24/7 support. Inside Axelerant, we focus on talent that’s giving, open, passionate, process oriented, and self­directed. Our clients tend to be design agencies, media publishers, and other IT organizations.</p><h2>Vision</h2><p>Axelerant, making happiness possible</p><h2>Mission</h2><p>We’re an incubator for innovative products and services created to make the world a happier place.</p><h2>Core Values</h2><ul><li><b>Passion</b> – Our passion is so strong, we’re self­directed to make the difficult easy.</li><li><b>Openness</b> – We’re so honest and painstaking in our discussions that there are no questions left, and standards are created.</li><li><b>Giving</b> – We’re excited to share our results to inspire all to surpass them.</li></ul><p>Read more about…</p><ul><li><a href="%1$s">Axelerant Team Members</a></li><li><a href="%2$s">Drupal Give</a></li><li><a href="%3$s">How We Work</a></li><li><a href="%4$s">Testimonials</a></li><li><a href="%6$s">Careers</a></li></ul>', 'typo3-importer' );
+	public function display_about() {
+		$text  = __( '<img class="size-medium" src="%5$s" alt="Axelerant 2015 Retreat in Goa" width="640" height="327" /><p>Axelerant is a full-service software development company that focuses on open-source technologies. Top technical talent who are passionate, giving, and communicative demonstrates our backbone. We provide high-end Strategy, Implementation, and Support services for our clients and agencies with whom we partner.</p><p>Our team members span the world, and we follow agile delivery and working processes. Further, we’re actively giving back to many open-source communities and have fostered an innovative, incubator culture to give ideas a chance to succeed.</p><h2>Foundations of Axelerant</h2><ul><li><b>Passion</b> – Our passion is so strong, we’re self­directed to make the difficult easy.</li><li><b>Openness</b> – We’re so honest and painstaking in our discussions that there are no questions left, and standards are created.</li><li><b>Giving</b> – We’re excited to share our results to inspire all to surpass them.</li></ul><h3>Learn More About Axelerant</h3><ul><li><a href="%1$s">Axelerant Team</a></li><li><a href="%2$s">Giving Back</a></li><li><a href="%7$s">Inside Axelerant</a></li><li><a href="%3$s">Our Services</a></li><li><a href="%4$s">Testimonials</a></li><li><a href="%6$s">Careers</a></li></ul>', 'typo3-importer' );
 
 		echo '<div id="about" style="width: 70%; min-height: 225px;"><p>';
 		echo sprintf(
 			$text,
-			esc_url( '//axelerant.com/about-axelerant/axelerant-team-members/' ),
-			esc_url( '//www.axelerant.com/drupalgive' ),
-			esc_url( '//axelerant.com/about-axelerant/how-we-work/' ),
-			esc_url( '//axelerant.com/about-axelerant/testimonials/' ),
-			esc_url( '//axelerant.com/wp-content/uploads/2015/02/IGP7228-2015-01-22-at-05-18-02.jpg' ),
-			esc_url( '//axelerant.com/careers/' )
+			esc_url( 'https://axelerant.com/about-axelerant/' ),
+			esc_url( 'https://axelerant.com/drupalgive/' ),
+			esc_url( 'https://axelerant.com/services/' ),
+			esc_url( 'https://axelerant.com/about-axelerant/testimonials/' ),
+			esc_url( 'https://axelerant.com/wp-content/uploads/2015/02/IGP7228-2015-01-22-at-05-18-02.jpg' ),
+			esc_url( 'https://axelerant.com/careers/' ),
+			esc_url( 'https://axelerant.com/open-policies-open-discussion/' )
 		);
 		echo '</p></div>';
 	}
@@ -740,7 +741,7 @@ EOD;
 		
 		foreach ( $this->sections as $slug => $title ) {
 			if ( $slug == 'about' )
-				add_settings_section( $slug, $title, array( &$this, 'display_about_section' ), 't3i-options' );
+				add_settings_section( $slug, $title, array( &$this, 'display_about' ), 't3i-options' );
 			else
 				add_settings_section( $slug, $title, array( &$this, 'display_section' ), 't3i-options' );
 		}
